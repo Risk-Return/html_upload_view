@@ -10,7 +10,7 @@ function detectInitialLang() {
 }
 
 async function loadLocale(lang) {
-  const res = await fetch(`/static/locales/${lang}.json`, { cache: 'force-cache' });
+  const res = await fetch(`static/locales/${lang}.json`, { cache: 'force-cache' });
   if (!res.ok) throw new Error(`Failed to load locale ${lang}`);
   return res.json();
 }

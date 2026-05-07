@@ -9,9 +9,10 @@ const ALLOWED_MIME = new Set([
   'application/octet-stream',
 ]);
 
-function buildPreviewUrl(publicHost, hash) {
-  const base = publicHost.replace(/\/+$/, '');
-  return `${base}/view/${hash}`;
+function buildPreviewUrl(publicHost, basePath, hash) {
+  const host = publicHost.replace(/\/+$/, '');
+  const prefix = basePath || '';
+  return `${host}${prefix}/view/${hash}`;
 }
 
 export default async function uploadRoutes(app) {
@@ -133,7 +134,7 @@ export default async function uploadRoutes(app) {
         hash,
         originalName: filename,
         sizeBytes: buffer.length,
-        url: buildPreviewUrl(config.publicHost, hash),
+        url: buildPreviewUrl(config.publicHost, config.basePath, hash),
       });
     }
 

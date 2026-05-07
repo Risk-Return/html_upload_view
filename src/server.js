@@ -39,18 +39,25 @@ export async function buildServer(configOverrides = {}) {
     },
   });
 
-  await app.register(fastifyStatic, {
-    root: projectPaths.publicDir,
-    prefix: '/static/',
-    decorateReply: false,
-  });
+  const mountPrefix = config.basePath || '/';
 
-  app.get('/api/health', async () => ({ status: 'ok' }));
+  await app.register(
+    async (scope) => {
+      await scope.register(fastifyStatic, {
+        root: projectPaths.publicDir,
+        prefix: '/static/',
+        decorateReply: false,
+      });
 
-  await app.register(uploadRoutes);
-  await app.register(rawRoutes);
-  await app.register(viewRoutes);
-  await app.register(pageRoutes);
+      scope.get('/api/health', async () => ({ status: 'ok' }));
+
+      await scope.register(uploadRoutes);
+      await scope.register(rawRoutes);
+      await scope.register(viewRoutes);
+      await scope.register(pageRoutes);
+    },
+    { prefix: mountPrefix },
+  );
 
   return app;
 }

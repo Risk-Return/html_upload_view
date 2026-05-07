@@ -130,7 +130,7 @@ async function submit() {
   for (const f of state.files) fd.append('files', f, f.name);
 
   try {
-    const res = await fetch('/api/upload', { method: 'POST', body: fd });
+    const res = await fetch('api/upload', { method: 'POST', body: fd });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
       const key = data.error || 'storage_failure';

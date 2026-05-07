@@ -28,14 +28,14 @@ async function copyToClipboard(text, toast) {
 async function init() {
   await i18n.init();
 
-  const match = window.location.pathname.match(/^\/view\/([0-9A-Za-z]{12})$/);
+  const match = window.location.pathname.match(/\/view\/([0-9A-Za-z]{12})\/?$/);
   if (!match) {
     document.body.innerHTML = '<p style="padding:24px;font-family:system-ui">404</p>';
     return;
   }
   const hash = match[1];
   const iframe = $('#preview');
-  iframe.setAttribute('src', `/raw/${hash}`);
+  iframe.setAttribute('src', `raw/${hash}`);
 
   const fullUrl = window.location.href;
   const urlPill = $('#url-pill');

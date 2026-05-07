@@ -10,8 +10,8 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "node --watch src/server.js",
-    "test": "node --test tests/unit/*.test.js",
-    "test:e2e": "node --test tests/e2e/*.test.js"
+    "test": "NODE_ENV=test node --test tests/unit/*.test.js",
+    "test:e2e": "NODE_ENV=test node --test tests/e2e/*.test.js"
   },
   "dependencies": {
     "@fastify/multipart": "^8.3.0",
