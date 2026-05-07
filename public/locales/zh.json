@@ -1,0 +1,44 @@
+{
+  "appName": "HTML 寄存",
+  "tagline": "上传 HTML 文件，使用简洁的不透明链接分享。",
+  "upload": {
+    "dropTitle": "把 HTML 文件拖到这里",
+    "dropSubtitle": "或点击选择 — 每个 IP 每日最多 5 个",
+    "browse": "选择文件",
+    "filesHeading": "已选文件",
+    "remove": "移除",
+    "submit": "上传",
+    "submitting": "上传中…",
+    "clear": "清空",
+    "quotaInfo": "每日上传限制：每个 IP {limit} 个，UTC 零点重置。"
+  },
+  "results": {
+    "heading": "预览链接",
+    "open": "打开",
+    "copy": "复制链接",
+    "copied": "已复制！",
+    "newUpload": "继续上传"
+  },
+  "view": {
+    "heading": "HTML 预览",
+    "back": "返回上传",
+    "copy": "复制链接",
+    "copied": "已复制！"
+  },
+  "errors": {
+    "quota_exceeded": "今日上传次数已用完，请在 UTC 零点后再试。",
+    "file_too_large": "有文件超过 {maxFileSizeMb} MB 限制。",
+    "invalid_file_type": "仅接受 .html 和 .htm 文件。",
+    "no_files": "请选择至少一个 HTML 文件。",
+    "multipart_required": "请求格式无效。",
+    "storage_failure": "服务器保存文件失败，请重试。",
+    "network": "网络错误，请重试。"
+  },
+  "lang": {
+    "switch": "EN",
+    "current": "中文"
+  },
+  "footer": {
+    "note": "文件保存在服务器上，仅通过生成的 URL 可访问。"
+  }
+}

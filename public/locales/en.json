@@ -1,0 +1,44 @@
+{
+  "appName": "HTML Vault",
+  "tagline": "Upload HTML files. Share them with a clean, opaque link.",
+  "upload": {
+    "dropTitle": "Drop HTML files here",
+    "dropSubtitle": "or click to browse — up to 5 per day per IP",
+    "browse": "Browse files",
+    "filesHeading": "Selected files",
+    "remove": "Remove",
+    "submit": "Upload",
+    "submitting": "Uploading…",
+    "clear": "Clear all",
+    "quotaInfo": "Daily upload limit: {limit} per IP, resets at UTC midnight."
+  },
+  "results": {
+    "heading": "Your preview links",
+    "open": "Open",
+    "copy": "Copy link",
+    "copied": "Copied!",
+    "newUpload": "Upload more"
+  },
+  "view": {
+    "heading": "HTML Preview",
+    "back": "Back to upload",
+    "copy": "Copy link",
+    "copied": "Copied!"
+  },
+  "errors": {
+    "quota_exceeded": "Daily upload limit reached. Try again after UTC midnight.",
+    "file_too_large": "One or more files exceed the {maxFileSizeMb} MB limit.",
+    "invalid_file_type": "Only .html and .htm files are accepted.",
+    "no_files": "Please select at least one HTML file.",
+    "multipart_required": "Invalid request format.",
+    "storage_failure": "Server error while saving files. Please retry.",
+    "network": "Network error. Please retry."
+  },
+  "lang": {
+    "switch": "中文",
+    "current": "EN"
+  },
+  "footer": {
+    "note": "Files are stored privately on the server and only accessible via the generated URL."
+  }
+}

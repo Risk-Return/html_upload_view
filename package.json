@@ -1,0 +1,25 @@
+{
+  "name": "html-upload-view",
+  "version": "1.0.0",
+  "description": "Lightweight HTML upload and preview website with per-IP daily quota and i18n.",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "test": "node --test tests/unit/*.test.js",
+    "test:e2e": "node --test tests/e2e/*.test.js"
+  },
+  "dependencies": {
+    "@fastify/multipart": "^8.3.0",
+    "@fastify/static": "^7.0.4",
+    "better-sqlite3": "^11.3.0",
+    "dotenv": "^16.4.5",
+    "fastify": "^4.28.1",
+    "nanoid": "^5.0.7"
+  },
+  "devDependencies": {}
+}

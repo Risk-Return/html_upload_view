@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title data-i18n="appName">HTML Vault</title>
+    <link rel="stylesheet" href="/static/css/styles.css" />
+  </head>
+  <body>
+    <div class="layout">
+      <header class="topbar">
+        <div class="brand">
+          <span class="brand-dot" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          </span>
+          <span data-i18n="appName">HTML Vault</span>
+        </div>
+        <button id="lang-toggle" class="lang-toggle" type="button" aria-label="Switch language">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+          <span data-i18n="lang.switch">中文</span>
+        </button>
+      </header>
+
+      <main>
+        <div class="container">
+          <section class="hero">
+            <h1 data-i18n="appName">HTML Vault</h1>
+            <p data-i18n="tagline">Upload HTML files. Share them with a clean, opaque link.</p>
+          </section>
+
+          <section>
+            <label id="dropzone" class="dropzone" for="file-input">
+              <span class="icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              </span>
+              <div class="title" data-i18n="upload.dropTitle">Drop HTML files here</div>
+              <div class="subtitle" data-i18n="upload.dropSubtitle">or click to browse — up to 5 per day per IP</div>
+              <input id="file-input" type="file" accept=".html,.htm,text/html" multiple />
+            </label>
+          </section>
+
+          <div id="error" class="alert alert-error" hidden>
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <span class="msg"></span>
+          </div>
+
+          <section id="files-section" hidden>
+            <h2 data-i18n="upload.filesHeading" style="margin:0 0 12px;font-size:16px;font-weight:600;color:var(--text-muted)">Selected files</h2>
+            <ul id="file-list" class="file-list"></ul>
+            <div class="actions" style="margin-top:16px">
+              <button id="clear-btn" class="btn btn-ghost" type="button">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+                <span class="label" data-i18n="upload.clear">Clear all</span>
+              </button>
+              <button id="submit-btn" class="btn btn-primary" type="button" disabled>
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                <span class="label" data-i18n="upload.submit">Upload</span>
+              </button>
+            </div>
+          </section>
+
+          <section id="results" class="results" hidden>
+            <h2 data-i18n="results.heading">Your preview links</h2>
+            <ul id="result-list" class="result-list"></ul>
+          </section>
+        </div>
+      </main>
+
+      <footer class="footer">
+        <span data-i18n="footer.note">Files are stored privately on the server and only accessible via the generated URL.</span>
+      </footer>
+    </div>
+
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+    <script type="module" src="/static/js/upload.js"></script>
+  </body>
+</html>
