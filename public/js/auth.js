@@ -192,16 +192,22 @@ async function init() {
   els.toast = $('#toast');
   els.langToggle = $('#lang-toggle');
 
-  await i18n.init();
+  try {
+    await i18n.init();
+  } catch (err) {
+    console.error('i18n init failed:', err);
+  }
 
   els.loginSubmit.addEventListener('click', login);
   els.registerSubmit.addEventListener('click', register);
   els.sendCodeBtn.addEventListener('click', sendCode);
-  $('#show-register').addEventListener('click', (e) => { e.preventDefault(); showRegister(); });
-  $('#show-login').addEventListener('click', (e) => { e.preventDefault(); showLogin(); });
+  const showReg = $('#show-register');
+  const showLog = $('#show-login');
+  if (showReg) showReg.addEventListener('click', (e) => { e.preventDefault(); showRegister(); });
+  if (showLog) showLog.addEventListener('click', (e) => { e.preventDefault(); showLogin(); });
   els.langToggle.addEventListener('click', () => i18n.toggle());
 
   els.loginPassword.addEventListener('keydown', (e) => { if (e.key === 'Enter') login(); });
 }
 
-init();
+init().catch((err) => console.error('auth init failed:', err));
