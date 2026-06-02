@@ -94,6 +94,40 @@ button {
 }
 .brand svg { width: 16px; height: 16px; stroke: currentColor; }
 
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.user-email {
+  font-size: 13px;
+  color: var(--text-muted);
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.form-group { display: flex; flex-direction: column; gap: 6px; }
+.form-label { font-size: 13px; font-weight: 500; color: var(--text-muted); }
+.form-input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  color: var(--text);
+  background: var(--bg-card);
+  transition: border-color 200ms ease, box-shadow 200ms ease;
+  outline: none;
+}
+.form-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+.form-input::placeholder { color: var(--text-soft); }
+
 .lang-toggle {
   display: inline-flex;
   align-items: center;

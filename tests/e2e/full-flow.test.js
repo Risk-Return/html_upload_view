@@ -5,6 +5,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import Database from 'better-sqlite3';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const projectRoot = path.resolve(__dirname, '..', '..');
@@ -14,6 +15,7 @@ const BASE = `http://127.0.0.1:${PORT}`;
 
 let server;
 let dataDir;
+let authCookie = '';
 
 async function waitForHealth(timeoutMs = 10_000) {
   const deadline = Date.now() + timeoutMs;
@@ -29,12 +31,44 @@ async function waitForHealth(timeoutMs = 10_000) {
   throw new Error('server did not become healthy in time');
 }
 
+function extractCookie(headers) {
+  const setCookie = headers.getSetCookie?.() || headers.get('set-cookie') || '';
+  const match = (Array.isArray(setCookie) ? setCookie.join('; ') : String(setCookie)).match(/token=([^;]+)/);
+  return match ? match[1] : null;
+}
+
+async function registerUser(email, password) {
+  const res = await fetch(`${BASE}/api/auth/send-code`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ email }),
+  });
+  assert.ok(res.ok, `send-code failed: ${await res.text()}`);
+
+  const db = new Database(path.join(dataDir, 'app.db'), { readonly: true });
+  const row = db.prepare(
+    'SELECT code FROM verification_codes WHERE email = ? AND used = 0 ORDER BY id DESC LIMIT 1',
+  ).get(email);
+  db.close();
+  assert.ok(row, 'no verification code found in db');
+  const code = row.code;
+
+  const res2 = await fetch(`${BASE}/api/auth/verify-and-register`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ email, code, password }),
+  });
+  const cookie = extractCookie(res2.headers);
+  assert.ok(cookie, `verify-and-register failed: ${await res2.text()}`);
+  return `token=${cookie}`;
+}
+
 async function uploadFiles(files, ip) {
   const form = new FormData();
   for (const f of files) {
     form.append('files', new Blob([f.body], { type: f.type ?? 'text/html' }), f.name);
   }
-  const headers = {};
+  const headers = { cookie: authCookie };
   if (ip) headers['x-forwarded-for'] = ip;
   const res = await fetch(`${BASE}/api/upload`, { method: 'POST', body: form, headers });
   const json = await res.json().catch(() => null);
@@ -59,6 +93,13 @@ before(async () => {
   server.stdout.on('data', () => {});
   server.stderr.on('data', () => {});
   await waitForHealth();
+
+  try {
+    authCookie = await registerUser('e2e@example.com', 'e2etest123');
+  } catch (err) {
+    console.error('Failed to register e2e user:', err.message);
+    throw err;
+  }
 });
 
 after(async () => {
@@ -72,15 +113,28 @@ after(async () => {
   if (dataDir) fs.rmSync(dataDir, { recursive: true, force: true });
 });
 
-test('GET /pageupload serves the upload page with i18n hooks', async () => {
-  const res = await fetch(`${BASE}/pageupload`);
+test('GET /login serves the login page', async () => {
+  const res = await fetch(`${BASE}/login`);
+  assert.equal(res.status, 200);
+  assert.match(res.headers.get('content-type'), /text\/html/);
+  const body = await res.text();
+  assert.match(body, /login-form/);
+});
+
+test('GET /pageupload serves the upload page with auth', async () => {
+  const res = await fetch(`${BASE}/pageupload`, { headers: { cookie: authCookie } });
   assert.equal(res.status, 200);
   assert.match(res.headers.get('content-type'), /text\/html/);
   const body = await res.text();
   assert.match(body, /<title[^>]*data-i18n="appName"/);
   assert.match(body, /id="dropzone"/);
   assert.match(body, /id="lang-toggle"/);
-  assert.match(body, /\/static\/js\/upload\.js/);
+  assert.match(body, /static\/js\/upload\.js/);
+});
+
+test('GET /pageupload returns 401 without auth', async () => {
+  const res = await fetch(`${BASE}/pageupload`);
+  assert.equal(res.status, 401);
 });
 
 test('GET /static/locales/en.json and zh.json are served', async () => {
@@ -114,13 +168,11 @@ test('upload -> view -> raw end-to-end', async () => {
     assert.match(item.hash, /^[0-9A-Za-z]{12}$/);
     assert.equal(item.url, `${BASE}/view/${item.hash}`);
 
-    // /view/:hash returns the chrome shell
     const v = await fetch(item.url);
     assert.equal(v.status, 200);
     const vBody = await v.text();
     assert.match(vBody, /<iframe[^>]*data-role="preview"/);
 
-    // /raw/:hash returns the original bytes
     const r = await fetch(`${BASE}/raw/${item.hash}`);
     assert.equal(r.status, 200);
     assert.match(r.headers.get('content-type'), /text\/html/);
@@ -134,7 +186,7 @@ test('quota: 6th upload from same IP rejected with 429 atomically', async () => 
   const ip = '198.51.100.20';
   for (let i = 0; i < 5; i++) {
     const r = await uploadFiles([{ name: `q${i}.html`, body: `<p>q${i}</p>` }], ip);
-    assert.equal(r.status, 201, `upload ${i} should succeed`);
+    assert.equal(r.status, 201, `upload ${i} should succeed: ${JSON.stringify(r.json)}`);
   }
   const sixth = await uploadFiles([{ name: 'q6.html', body: '<p>q6</p>' }], ip);
   assert.equal(sixth.status, 429);

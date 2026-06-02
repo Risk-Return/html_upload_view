@@ -4,6 +4,8 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { buildServer } from '../../src/server.js';
+import { signToken } from '../../src/auth/token.js';
+import { hashPassword } from '../../src/auth/crypto.js';
 
 process.env.NODE_ENV = 'test';
 
@@ -31,14 +33,23 @@ function buildMultipart(files, boundary = '----huvtest') {
   };
 }
 
+function createTestUser(app, email = 'test@example.com') {
+  if (!app.db.getUser(email)) {
+    app.db.createUser(email, hashPassword('test123'));
+    app.db.setUserVerified(email);
+  }
+  return signToken({ email }, app.config.tokenSecret, app.config.tokenExpirySeconds);
+}
+
 async function uploadOne(app, htmlBody, ip = '7.7.7.1') {
   const mp = buildMultipart([
     { filename: 'doc.html', contentType: 'text/html', body: htmlBody },
   ]);
+  const token = createTestUser(app);
   const res = await app.inject({
     method: 'POST',
     url: '/api/upload',
-    headers: { ...mp.headers, 'x-forwarded-for': ip },
+    headers: { ...mp.headers, 'x-forwarded-for': ip, cookie: `token=${token}` },
     payload: mp.body,
   });
   assert.equal(res.statusCode, 201, `upload failed: ${res.body}`);
@@ -99,11 +110,32 @@ test('GET /view/:hash returns 404 for unknown hash', async () => {
   });
 });
 
-test('GET /pageupload returns the upload page HTML', async () => {
+test('GET /pageupload returns 401 without auth', async () => {
   await withApp(async (app) => {
     const res = await app.inject({ method: 'GET', url: '/pageupload' });
+    assert.equal(res.statusCode, 401);
+  });
+});
+
+test('GET /pageupload returns upload page with auth', async () => {
+  await withApp(async (app) => {
+    const token = createTestUser(app);
+    const res = await app.inject({
+      method: 'GET',
+      url: '/pageupload',
+      headers: { cookie: `token=${token}` },
+    });
     assert.equal(res.statusCode, 200);
     assert.match(res.headers['content-type'], /text\/html/);
     assert.match(res.body, /<html/i);
+  });
+});
+
+test('GET /login returns the login page', async () => {
+  await withApp(async (app) => {
+    const res = await app.inject({ method: 'GET', url: '/login' });
+    assert.equal(res.statusCode, 200);
+    assert.match(res.headers['content-type'], /text\/html/);
+    assert.match(res.body, /login-form/);
   });
 });

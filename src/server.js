@@ -1,14 +1,17 @@
 import Fastify from 'fastify';
 import multipart from '@fastify/multipart';
 import fastifyStatic from '@fastify/static';
+import fastifyCookie from '@fastify/cookie';
 import { loadConfig, projectPaths } from './config.js';
 import { Db } from './db.js';
 import { Storage } from './storage.js';
 import { RateLimiter } from './ratelimit.js';
+import { authRequired, optionalAuth } from './auth/middleware.js';
 import uploadRoutes from './routes/upload.js';
 import rawRoutes from './routes/raw.js';
 import viewRoutes from './routes/view.js';
-import pageRoutes from './routes/pages.js';
+import pageRoutes, { loginPageRoute } from './routes/pages.js';
+import authRoutes from './routes/auth.js';
 
 export async function buildServer(configOverrides = {}) {
   const config = loadConfig(configOverrides);
@@ -31,6 +34,8 @@ export async function buildServer(configOverrides = {}) {
     db.close();
   });
 
+  await app.register(fastifyCookie);
+
   await app.register(multipart, {
     limits: {
       fileSize: config.maxFileSizeMb * 1024 * 1024,
@@ -40,6 +45,8 @@ export async function buildServer(configOverrides = {}) {
   });
 
   const mountPrefix = config.basePath || '/';
+  const requireAuth = authRequired(config);
+  const optAuth = optionalAuth(config);
 
   await app.register(
     async (scope) => {
@@ -51,10 +58,21 @@ export async function buildServer(configOverrides = {}) {
 
       scope.get('/api/health', async () => ({ status: 'ok' }));
 
-      await scope.register(uploadRoutes);
+      await scope.register(async (authScope) => {
+        authScope.addHook('preHandler', optAuth);
+        await authScope.register(authRoutes);
+      });
+
+      await scope.register(loginPageRoute);
+
+      await scope.register(async (authScope) => {
+        authScope.addHook('preHandler', requireAuth);
+        await authScope.register(uploadRoutes);
+        await authScope.register(pageRoutes);
+      });
+
       await scope.register(rawRoutes);
       await scope.register(viewRoutes);
-      await scope.register(pageRoutes);
     },
     { prefix: mountPrefix },
   );

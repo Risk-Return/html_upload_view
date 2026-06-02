@@ -4,6 +4,7 @@ import { projectPaths } from '../config.js';
 import { renderTemplate } from '../template.js';
 
 const UPLOAD_PAGE = path.join(projectPaths.publicDir, 'pageupload.html');
+const LOGIN_PAGE = path.join(projectPaths.publicDir, 'login.html');
 
 function readMaybeText(p) {
   try {
@@ -15,17 +16,37 @@ function readMaybeText(p) {
 
 export default async function pageRoutes(app) {
   const uploadTpl = readMaybeText(UPLOAD_PAGE);
-  const rendered = uploadTpl == null ? null : renderTemplate(uploadTpl, app.config);
+  const renderedUpload = uploadTpl == null ? null : renderTemplate(uploadTpl, app.config);
 
-  const handler = async (_request, reply) => {
-    if (!rendered) {
+  app.get('/', async (_request, reply) => {
+    if (!renderedUpload) {
       return reply.code(500).send({ error: 'page_missing' });
     }
     return reply
       .header('Content-Type', 'text/html; charset=utf-8')
-      .send(rendered);
-  };
+      .send(renderedUpload);
+  });
 
-  app.get('/', handler);
-  app.get('/pageupload', handler);
+  app.get('/pageupload', async (_request, reply) => {
+    if (!renderedUpload) {
+      return reply.code(500).send({ error: 'page_missing' });
+    }
+    return reply
+      .header('Content-Type', 'text/html; charset=utf-8')
+      .send(renderedUpload);
+  });
+}
+
+export async function loginPageRoute(app) {
+  const loginTpl = readMaybeText(LOGIN_PAGE);
+  const renderedLogin = loginTpl == null ? null : renderTemplate(loginTpl, app.config);
+
+  app.get('/login', async (_request, reply) => {
+    if (!renderedLogin) {
+      return reply.code(500).send({ error: 'page_missing' });
+    }
+    return reply
+      .header('Content-Type', 'text/html; charset=utf-8')
+      .send(renderedLogin);
+  });
 }

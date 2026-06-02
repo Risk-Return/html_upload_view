@@ -54,6 +54,16 @@ export function loadConfig(overrides = {}) {
     uploadsDir: path.join(dataDir, 'uploads'),
     dbPath: path.join(dataDir, 'app.db'),
     projectRoot,
+    wecomCorpId: overrides.WECOM_CORPID ?? str('WECOM_CORPID', ''),
+    wecomCorpSecret: overrides.WECOM_CORPSECRET ?? str('WECOM_CORPSECRET', ''),
+    smtpHost: overrides.SMTP_HOST ?? str('SMTP_HOST', 'smtp.exmail.qq.com'),
+    smtpPort: overrides.SMTP_PORT ?? int('SMTP_PORT', 465),
+    smtpUser: overrides.SMTP_USER ?? str('SMTP_ACCOUNT', 'noreply@tiangongtech.cn'),
+    smtpPass: overrides.SMTP_PASS ?? str('WECOM_CORPSECRET', ''),
+    smtpFrom: overrides.SMTP_FROM ?? str('SMTP_ACCOUNT', 'noreply@tiangongtech.cn'),
+    tokenSecret: overrides.TOKEN_SECRET ?? str('TOKEN_SECRET', 'change-me-in-production'),
+    tokenExpirySeconds: overrides.TOKEN_EXPIRY_SECONDS ?? int('TOKEN_EXPIRY_SECONDS', 86400),
+    verificationCodeExpirySeconds: overrides.VERIFICATION_CODE_EXPIRY_SECONDS ?? int('VERIFICATION_CODE_EXPIRY_SECONDS', 600),
   };
 }
 

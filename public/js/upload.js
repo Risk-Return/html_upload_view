@@ -192,8 +192,23 @@ async function init() {
   els.resultList = $('#result-list');
   els.toast = $('#toast');
   els.langToggle = $('#lang-toggle');
+  els.userEmail = $('#user-email');
+  els.logoutBtn = $('#logout-btn');
 
   await i18n.init();
+
+  try {
+    const meRes = await fetch('api/auth/me');
+    if (!meRes.ok) {
+      window.location.href = 'login';
+      return;
+    }
+    const meData = await meRes.json();
+    if (els.userEmail) els.userEmail.textContent = meData.email;
+  } catch {
+    window.location.href = 'login';
+    return;
+  }
   i18n.onChange(() => {
     renderFiles();
     if (els.error && !els.error.hidden) {
@@ -213,6 +228,10 @@ async function init() {
     renderFiles();
   });
   els.langToggle.addEventListener('click', () => i18n.toggle());
+  els.logoutBtn.addEventListener('click', async () => {
+    await fetch('api/auth/logout', { method: 'POST' });
+    window.location.href = 'login';
+  });
 
   renderFiles();
 }

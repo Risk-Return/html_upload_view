@@ -25,6 +25,36 @@
     "copy": "Copy link",
     "copied": "Copied!"
   },
+  "auth": {
+    "loginTitle": "Sign in",
+    "registerTitle": "Create account",
+    "email": "Email",
+    "password": "Password",
+    "verificationCode": "Verification Code",
+    "sendCode": "Send Code",
+    "login": "Sign in",
+    "register": "Register",
+    "logout": "Logout",
+    "createAccount": "Create Account",
+    "noAccount": "No account?",
+    "hasAccount": "Already have an account?",
+    "codeSent": "Verification code sent. Please check your email.",
+    "errors": {
+      "invalid_email": "Please enter a valid email address.",
+      "invalid_code": "Invalid verification code format.",
+      "password_too_short": "Password must be at least 6 characters.",
+      "invalid_or_expired_code": "Invalid or expired verification code.",
+      "email_already_registered": "This email is already registered.",
+      "invalid_credentials": "Invalid email or password.",
+      "email_password_required": "Email and password are required.",
+      "email_required": "Email is required.",
+      "user_not_found": "Please request a verification code first.",
+      "allFieldsRequired": "All fields are required.",
+      "passwordTooShort": "Password must be at least 6 characters.",
+      "emailPasswordRequired": "Email and password are required.",
+      "unknown": "An error occurred. Please try again."
+    }
+  },
   "errors": {
     "quota_exceeded": "Daily upload limit reached. Try again after UTC midnight.",
     "file_too_large": "One or more files exceed the {maxFileSizeMb} MB limit.",
@@ -32,7 +62,8 @@
     "no_files": "Please select at least one HTML file.",
     "multipart_required": "Invalid request format.",
     "storage_failure": "Server error while saving files. Please retry.",
-    "network": "Network error. Please retry."
+    "network": "Network error. Please retry.",
+    "unauthorized": "Please sign in to continue."
   },
   "lang": {
     "switch": "中文",

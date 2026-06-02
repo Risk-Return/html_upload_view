@@ -4,11 +4,13 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { buildServer } from '../../src/server.js';
+import { signToken } from '../../src/auth/token.js';
+import { hashPassword } from '../../src/auth/crypto.js';
 
 process.env.NODE_ENV = 'test';
 
 function tmpDataDir() {
-  return fs.mkdtempSync(path.join(os.tmpdir(), 'huv-upload-'));
+  return fs.mkdtempSync(path.join(os.tmpdir(), 'huvupload-'));
 }
 
 function buildMultipart(files, boundary = '----huvtest') {
@@ -31,6 +33,14 @@ function buildMultipart(files, boundary = '----huvtest') {
   };
 }
 
+function createTestUser(app, email = 'test@example.com') {
+  if (!app.db.getUser(email)) {
+    app.db.createUser(email, hashPassword('test123'));
+    app.db.setUserVerified(email);
+  }
+  return signToken({ email }, app.config.tokenSecret, app.config.tokenExpirySeconds);
+}
+
 async function withApp(overrides, fn) {
   const dir = tmpDataDir();
   const app = await buildServer({ DATA_DIR: dir, ...overrides });
@@ -42,6 +52,11 @@ async function withApp(overrides, fn) {
   }
 }
 
+async function authHeaders(app) {
+  const token = createTestUser(app);
+  return { cookie: `token=${token}` };
+}
+
 test('happy path: uploads two HTML files and returns URLs', async () => {
   await withApp({ DAILY_UPLOAD_LIMIT: 5 }, async (app) => {
     const mp = buildMultipart([
@@ -51,7 +66,7 @@ test('happy path: uploads two HTML files and returns URLs', async () => {
     const res = await app.inject({
       method: 'POST',
       url: '/api/upload',
-      headers: { ...mp.headers, 'x-forwarded-for': '9.9.9.1' },
+      headers: { ...mp.headers, 'x-forwarded-for': '9.9.9.1', ...(await authHeaders(app)) },
       payload: mp.body,
     });
     assert.equal(res.statusCode, 201);
@@ -63,7 +78,9 @@ test('happy path: uploads two HTML files and returns URLs', async () => {
       assert.match(u.hash, /^[0-9A-Za-z]{12}$/);
       assert.ok(u.url.endsWith(`/view/${u.hash}`));
       assert.ok(await app.storage.exists(u.hash));
-      assert.ok(app.db.getUpload(u.hash));
+      const row = app.db.getUpload(u.hash);
+      assert.ok(row);
+      assert.equal(row.uploadedBy, 'test@example.com');
     }
   });
 });
@@ -76,7 +93,7 @@ test('rejects non-html extension with 415 and does not consume quota', async () 
     const res = await app.inject({
       method: 'POST',
       url: '/api/upload',
-      headers: { ...mp.headers, 'x-forwarded-for': '9.9.9.2' },
+      headers: { ...mp.headers, 'x-forwarded-for': '9.9.9.2', ...(await authHeaders(app)) },
       payload: mp.body,
     });
     assert.equal(res.statusCode, 415);
@@ -93,7 +110,7 @@ test('rejects oversize file with 413', async () => {
     const res = await app.inject({
       method: 'POST',
       url: '/api/upload',
-      headers: { ...mp.headers, 'x-forwarded-for': '9.9.9.3' },
+      headers: { ...mp.headers, 'x-forwarded-for': '9.9.9.3', ...(await authHeaders(app)) },
       payload: mp.body,
     });
     assert.equal(res.statusCode, 413);
@@ -103,6 +120,7 @@ test('rejects oversize file with 413', async () => {
 test('quota exceeded returns 429 atomically', async () => {
   await withApp({ DAILY_UPLOAD_LIMIT: 2 }, async (app) => {
     const ip = '9.9.9.4';
+    const h = await authHeaders(app);
     for (let i = 0; i < 2; i++) {
       const mp = buildMultipart([
         { filename: `${i}.html`, contentType: 'text/html', body: `<p>${i}</p>` },
@@ -110,7 +128,7 @@ test('quota exceeded returns 429 atomically', async () => {
       const res = await app.inject({
         method: 'POST',
         url: '/api/upload',
-        headers: { ...mp.headers, 'x-forwarded-for': ip },
+        headers: { ...mp.headers, 'x-forwarded-for': ip, ...h },
         payload: mp.body,
       });
       assert.equal(res.statusCode, 201);
@@ -121,7 +139,7 @@ test('quota exceeded returns 429 atomically', async () => {
     const res = await app.inject({
       method: 'POST',
       url: '/api/upload',
-      headers: { ...mp3.headers, 'x-forwarded-for': ip },
+      headers: { ...mp3.headers, 'x-forwarded-for': ip, ...h },
       payload: mp3.body,
     });
     assert.equal(res.statusCode, 429);
@@ -140,7 +158,7 @@ test('batch upload exceeding remaining quota is rejected without saving', async 
     const res = await app.inject({
       method: 'POST',
       url: '/api/upload',
-      headers: { ...mp.headers, 'x-forwarded-for': ip },
+      headers: { ...mp.headers, 'x-forwarded-for': ip, ...(await authHeaders(app)) },
       payload: mp.body,
     });
     assert.equal(res.statusCode, 429);
@@ -153,9 +171,21 @@ test('non-multipart request gets 400', async () => {
     const res = await app.inject({
       method: 'POST',
       url: '/api/upload',
-      headers: { 'content-type': 'application/json' },
+      headers: { 'content-type': 'application/json', ...(await authHeaders(app)) },
       payload: '{}',
     });
     assert.equal(res.statusCode, 400);
+  });
+});
+
+test('upload without auth returns 401', async () => {
+  await withApp({}, async (app) => {
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/upload',
+      headers: { 'content-type': 'application/json' },
+      payload: '{}',
+    });
+    assert.equal(res.statusCode, 401);
   });
 });

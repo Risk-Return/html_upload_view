@@ -25,6 +25,7 @@ export default async function uploadRoutes(app) {
     }
 
     const ip = clientIp(request);
+    const uploadedBy = request.user?.email ?? null;
     const collected = [];
     let oversize = false;
     let invalidType = false;
@@ -109,6 +110,7 @@ export default async function uploadRoutes(app) {
         sizeBytes: buffer.length,
         ip,
         createdAt: now,
+        uploadedBy,
       });
       if (!inserted) {
         hash = generateHash();
@@ -118,6 +120,7 @@ export default async function uploadRoutes(app) {
           sizeBytes: buffer.length,
           ip,
           createdAt: now,
+          uploadedBy,
         });
       }
       if (!inserted) {

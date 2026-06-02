@@ -25,6 +25,36 @@
     "copy": "复制链接",
     "copied": "已复制！"
   },
+  "auth": {
+    "loginTitle": "登录",
+    "registerTitle": "创建账号",
+    "email": "邮箱",
+    "password": "密码",
+    "verificationCode": "验证码",
+    "sendCode": "发送验证码",
+    "login": "登录",
+    "register": "注册",
+    "logout": "退出登录",
+    "createAccount": "创建账号",
+    "noAccount": "没有账号？",
+    "hasAccount": "已有账号？",
+    "codeSent": "验证码已发送，请检查邮箱。",
+    "errors": {
+      "invalid_email": "请输入有效的邮箱地址。",
+      "invalid_code": "验证码格式无效。",
+      "password_too_short": "密码至少需要 6 个字符。",
+      "invalid_or_expired_code": "验证码无效或已过期。",
+      "email_already_registered": "该邮箱已注册。",
+      "invalid_credentials": "邮箱或密码错误。",
+      "email_password_required": "请输入邮箱和密码。",
+      "email_required": "请输入邮箱。",
+      "user_not_found": "请先获取验证码。",
+      "allFieldsRequired": "请填写所有字段。",
+      "passwordTooShort": "密码至少需要 6 个字符。",
+      "emailPasswordRequired": "请输入邮箱和密码。",
+      "unknown": "发生错误，请重试。"
+    }
+  },
   "errors": {
     "quota_exceeded": "今日上传次数已用完，请在 UTC 零点后再试。",
     "file_too_large": "有文件超过 {maxFileSizeMb} MB 限制。",
@@ -32,7 +62,8 @@
     "no_files": "请选择至少一个 HTML 文件。",
     "multipart_required": "请求格式无效。",
     "storage_failure": "服务器保存文件失败，请重试。",
-    "network": "网络错误，请重试。"
+    "network": "网络错误，请重试。",
+    "unauthorized": "请先登录再继续。"
   },
   "lang": {
     "switch": "EN",
