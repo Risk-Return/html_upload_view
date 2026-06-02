@@ -52,6 +52,8 @@ export class Db {
     this.db.pragma('foreign_keys = ON');
     this.db.exec(SCHEMA);
 
+    this._migrate();
+
     this._insertUpload = this.db.prepare(`
       INSERT INTO uploads (hash, original_name, size_bytes, ip, created_at, uploaded_by)
       VALUES (@hash, @originalName, @sizeBytes, @ip, @createdAt, @uploadedBy)
@@ -178,5 +180,13 @@ export class Db {
 
   close() {
     this.db.close();
+  }
+
+  _migrate() {
+    const cols = this.db.pragma('table_info(uploads)');
+    const hasUploadedBy = cols.some((c) => c.name === 'uploaded_by');
+    if (!hasUploadedBy) {
+      this.db.exec('ALTER TABLE uploads ADD COLUMN uploaded_by TEXT');
+    }
   }
 }
