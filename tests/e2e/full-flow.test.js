@@ -132,9 +132,10 @@ test('GET /pageupload serves the upload page with auth', async () => {
   assert.match(body, /static\/js\/upload\.js/);
 });
 
-test('GET /pageupload returns 401 without auth', async () => {
-  const res = await fetch(`${BASE}/pageupload`);
-  assert.equal(res.status, 401);
+test('GET /pageupload returns 302 redirect to login without auth', async () => {
+  const res = await fetch(`${BASE}/pageupload`, { redirect: 'manual' });
+  assert.equal(res.status, 302);
+  assert.match(res.headers.get('location'), /\/login\?redirect=/);
 });
 
 test('GET /static/locales/en.json and zh.json are served', async () => {

@@ -110,10 +110,11 @@ test('GET /view/:hash returns 404 for unknown hash', async () => {
   });
 });
 
-test('GET /pageupload returns 401 without auth', async () => {
+test('GET /pageupload returns 302 redirect to login without auth', async () => {
   await withApp(async (app) => {
     const res = await app.inject({ method: 'GET', url: '/pageupload' });
-    assert.equal(res.statusCode, 401);
+    assert.equal(res.statusCode, 302);
+    assert.match(res.headers.location, /\/login\?redirect=/);
   });
 });
 
