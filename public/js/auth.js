@@ -193,6 +193,8 @@ async function init() {
   els.sendCodeBtn = $('#send-code-btn');
   els.toast = $('#toast');
   els.langToggle = $('#lang-toggle');
+  els.showRegBtn = $('#show-register');
+  els.showLogBtn = $('#show-login');
 
   try {
     await i18n.init();
@@ -200,16 +202,13 @@ async function init() {
     console.error('i18n init failed:', err);
   }
 
-  els.loginSubmit.addEventListener('click', login);
-  els.registerSubmit.addEventListener('click', register);
-  els.sendCodeBtn.addEventListener('click', sendCode);
-  const showReg = $('#show-register');
-  const showLog = $('#show-login');
-  if (showReg) showReg.addEventListener('click', (e) => { e.preventDefault(); showRegister(); });
-  if (showLog) showLog.addEventListener('click', (e) => { e.preventDefault(); showLogin(); });
-  els.langToggle.addEventListener('click', () => i18n.toggle());
-
-  els.loginPassword.addEventListener('keydown', (e) => { if (e.key === 'Enter') login(); });
+  if (els.loginSubmit) els.loginSubmit.addEventListener('click', login);
+  if (els.registerSubmit) els.registerSubmit.addEventListener('click', register);
+  if (els.sendCodeBtn) els.sendCodeBtn.addEventListener('click', sendCode);
+  if (els.showRegBtn) els.showRegBtn.addEventListener('click', (e) => { e.preventDefault(); showRegister(); });
+  if (els.showLogBtn) els.showLogBtn.addEventListener('click', (e) => { e.preventDefault(); showLogin(); });
+  if (els.langToggle) els.langToggle.addEventListener('click', () => i18n.toggle());
+  if (els.loginPassword) els.loginPassword.addEventListener('keydown', (e) => { if (e.key === 'Enter') login(); });
 }
 
 init().catch((err) => console.error('auth init failed:', err));
