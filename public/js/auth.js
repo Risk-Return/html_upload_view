@@ -44,6 +44,8 @@ function getRedirectUrl() {
   const params = new URLSearchParams(window.location.search);
   return params.get('redirect') || './';
 }
+
+function showRegister() {
   els.loginForm.hidden = true;
   els.registerForm.hidden = false;
   setLoginError('');
