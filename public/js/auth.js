@@ -40,7 +40,10 @@ function setRegisterInfo(msg) {
   els.registerInfo.querySelector('.msg').textContent = msg;
 }
 
-function showRegister() {
+function getRedirectUrl() {
+  const params = new URLSearchParams(window.location.search);
+  return params.get('redirect') || './';
+}
   els.loginForm.hidden = true;
   els.registerForm.hidden = false;
   setLoginError('');
@@ -131,7 +134,7 @@ async function register() {
       return;
     }
 
-    window.location.href = './';
+    window.location.href = getRedirectUrl();
   } catch {
     setRegisterError(i18n.t('errors.network'));
     els.registerSubmit.disabled = false;
@@ -165,7 +168,7 @@ async function login() {
       return;
     }
 
-    window.location.href = './';
+    window.location.href = getRedirectUrl();
   } catch {
     setLoginError(i18n.t('errors.network'));
     els.loginSubmit.disabled = false;

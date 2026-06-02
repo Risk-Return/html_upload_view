@@ -6,7 +6,7 @@ import { loadConfig, projectPaths } from './config.js';
 import { Db } from './db.js';
 import { Storage } from './storage.js';
 import { RateLimiter } from './ratelimit.js';
-import { authRequired, optionalAuth } from './auth/middleware.js';
+import { authRequired, pageAuthRequired, optionalAuth } from './auth/middleware.js';
 import uploadRoutes from './routes/upload.js';
 import rawRoutes from './routes/raw.js';
 import viewRoutes from './routes/view.js';
@@ -46,6 +46,7 @@ export async function buildServer(configOverrides = {}) {
 
   const mountPrefix = config.basePath || '/';
   const requireAuth = authRequired(config);
+  const pageAuth = pageAuthRequired(config);
   const optAuth = optionalAuth(config);
 
   await app.register(
@@ -68,6 +69,10 @@ export async function buildServer(configOverrides = {}) {
       await scope.register(async (authScope) => {
         authScope.addHook('preHandler', requireAuth);
         await authScope.register(uploadRoutes);
+      });
+
+      await scope.register(async (authScope) => {
+        authScope.addHook('preHandler', pageAuth);
         await authScope.register(pageRoutes);
       });
 
