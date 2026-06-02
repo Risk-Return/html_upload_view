@@ -156,6 +156,64 @@ function renderResults(data) {
   }
   state.files = [];
   renderFiles();
+  loadHistory();
+}
+
+function timeAgo(ts) {
+  const diff = Date.now() - ts;
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return 'just now';
+  if (mins < 60) return `${mins}m ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days < 30) return `${days}d ago`;
+  return new Date(ts).toLocaleDateString();
+}
+
+async function loadHistory() {
+  try {
+    const res = await fetch('api/uploads');
+    if (!res.ok) return;
+    const data = await res.json();
+    renderHistory(data);
+  } catch {
+    // silent
+  }
+}
+
+function renderHistory(items) {
+  if (!els.historyList) return;
+
+  if (!items || items.length === 0) {
+    els.historyLoading.hidden = true;
+    els.historyList.hidden = true;
+    els.historyEmpty.hidden = false;
+    return;
+  }
+
+  els.historyLoading.hidden = true;
+  els.historyEmpty.hidden = true;
+  els.historyList.hidden = false;
+  els.historyList.innerHTML = '';
+
+  items.forEach((item) => {
+    const li = document.createElement('li');
+    li.className = 'history-item';
+    li.innerHTML = `
+      <div class="hi-name"></div>
+      <div class="hi-meta">
+        <span class="hi-size"></span>
+        <span class="hi-time"></span>
+      </div>
+      <div class="hi-url"></div>`;
+    li.querySelector('.hi-name').textContent = item.originalName;
+    li.querySelector('.hi-size').textContent = formatBytes(item.sizeBytes);
+    li.querySelector('.hi-time').textContent = timeAgo(item.createdAt);
+    li.querySelector('.hi-url').textContent = item.url;
+    li.addEventListener('click', () => copyToClipboard(item.url));
+    els.historyList.appendChild(li);
+  });
 }
 
 function bindDropzone() {
@@ -194,6 +252,9 @@ async function init() {
   els.langToggle = $('#lang-toggle');
   els.userEmail = $('#user-email');
   els.logoutBtn = $('#logout-btn');
+  els.historyList = $('#history-list');
+  els.historyLoading = $('#history-loading');
+  els.historyEmpty = $('#history-empty');
 
   await i18n.init();
 
@@ -209,6 +270,9 @@ async function init() {
     window.location.href = 'login';
     return;
   }
+
+  loadHistory();
+
   i18n.onChange(() => {
     renderFiles();
     if (els.error && !els.error.hidden) {

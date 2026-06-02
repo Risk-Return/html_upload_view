@@ -25,6 +25,11 @@
     "copy": "复制链接",
     "copied": "已复制！"
   },
+  "history": {
+    "heading": "上传历史",
+    "loading": "加载中…",
+    "empty": "暂无上传记录"
+  },
   "auth": {
     "loginTitle": "登录",
     "registerTitle": "创建账号",

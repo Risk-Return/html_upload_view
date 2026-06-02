@@ -63,6 +63,13 @@ export class Db {
              ip, created_at AS createdAt, uploaded_by AS uploadedBy
       FROM uploads WHERE hash = ?
     `);
+    this._getUploadsByUser = this.db.prepare(`
+      SELECT hash, original_name AS originalName, size_bytes AS sizeBytes,
+             created_at AS createdAt
+      FROM uploads WHERE uploaded_by = ?
+      ORDER BY created_at DESC
+      LIMIT 50
+    `);
     this._getCounter = this.db.prepare(`
       SELECT count FROM upload_counters WHERE ip = ? AND day = ?
     `);
@@ -118,6 +125,10 @@ export class Db {
 
   getUpload(hash) {
     return this._getUpload.get(hash) ?? null;
+  }
+
+  getUploadsByUser(email) {
+    return this._getUploadsByUser.all(email);
   }
 
   getCounter(ip, day) {

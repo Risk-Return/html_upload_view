@@ -25,6 +25,11 @@
     "copy": "Copy link",
     "copied": "Copied!"
   },
+  "history": {
+    "heading": "Upload History",
+    "loading": "Loading…",
+    "empty": "No uploads yet"
+  },
   "auth": {
     "loginTitle": "Sign in",
     "registerTitle": "Create account",

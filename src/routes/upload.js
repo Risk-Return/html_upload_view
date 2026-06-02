@@ -19,6 +19,20 @@ export default async function uploadRoutes(app) {
   const { config, db, storage, rateLimiter } = app;
   const maxBytes = config.maxFileSizeMb * 1024 * 1024;
 
+  app.get('/api/uploads', async (request, reply) => {
+    if (!request.user) {
+      return reply.code(401).send({ error: 'unauthorized' });
+    }
+    const rows = db.getUploadsByUser(request.user.email);
+    return reply.send(rows.map((r) => ({
+      hash: r.hash,
+      originalName: r.originalName,
+      sizeBytes: r.sizeBytes,
+      createdAt: r.createdAt,
+      url: buildPreviewUrl(config.publicHost, config.basePath, r.hash),
+    })));
+  });
+
   app.post('/api/upload', async (request, reply) => {
     if (!request.isMultipart()) {
       return reply.code(400).send({ error: 'multipart_required' });
