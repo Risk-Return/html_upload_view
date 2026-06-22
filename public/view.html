@@ -33,6 +33,19 @@
       <div class="iframe-wrap">
         <iframe id="preview" data-role="preview" sandbox="allow-scripts allow-same-origin" referrerpolicy="no-referrer" title="HTML preview"></iframe>
       </div>
+      <div id="token-gate" class="token-gate" hidden>
+        <div class="token-gate-card">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:32px;height:32px;stroke:var(--accent)"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          <p data-i18n="tokens.gatePrompt" style="margin:8px 0 16px;font-size:14px;color:var(--text-muted)">This content is protected. Enter the access token to view.</p>
+          <div style="display:flex;gap:8px">
+            <input id="token-input" class="form-input" type="text" placeholder="Access token" style="flex:1" />
+            <button id="token-submit" class="btn btn-primary" type="button" data-i18n="tokens.gateSubmit">Unlock</button>
+          </div>
+          <div id="token-error" class="alert alert-error" hidden style="margin-top:12px">
+            <span class="msg" data-i18n="tokens.gateError">Invalid or exhausted token.</span>
+          </div>
+        </div>
+      </div>
     </div>
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
     <script type="module" src="static/js/view.js"></script>

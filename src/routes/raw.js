@@ -4,6 +4,23 @@ export default async function rawRoutes(app) {
   const { storage, db, bundles, config } = app;
   const prefix = config.basePath || '';
 
+  function checkAccess(hash, request, reply) {
+    if (!db.hasAccessTokens(hash)) return true;
+    const token = request.query?.token || request.headers['x-access-token'];
+    if (!token) {
+      reply.code(401).header('Content-Type', 'application/json; charset=utf-8');
+      reply.send({ error: 'token_required' });
+      return false;
+    }
+    const result = db.validateAccessToken(hash, token);
+    if (!result.valid) {
+      reply.code(403).header('Content-Type', 'application/json; charset=utf-8');
+      reply.send({ error: result.exhausted ? 'token_exhausted' : 'invalid_token' });
+      return false;
+    }
+    return true;
+  }
+
   async function serveHtmlFile(hash, reply) {
     let body;
     try {
@@ -34,6 +51,20 @@ export default async function rawRoutes(app) {
     return reply.sendFile(entry, bundles.dirFor(hash));
   }
 
+  // Public endpoint: check if an upload requires an access token
+  app.get('/api/uploads/:hash/token-check', async (request, reply) => {
+    const { hash } = request.params;
+    if (!isValidHash(hash)) {
+      return reply.code(404).send({ error: 'not_found' });
+    }
+    const row = db.getUpload(hash);
+    if (!row) {
+      return reply.code(404).send({ error: 'not_found' });
+    }
+    const requiresToken = db.hasAccessTokens(hash);
+    return reply.send({ requiresToken });
+  });
+
   // Direct hit without trailing slash. Single HTML files are served inline;
   // bundles redirect to the trailing-slash form so relative asset URLs in the
   // document resolve under /raw/<hash>/.
@@ -46,8 +77,10 @@ export default async function rawRoutes(app) {
     if (!row) {
       return reply.code(404).send({ error: 'not_found' });
     }
+    if (!checkAccess(hash, request, reply)) return;
     if (row.kind === 'bundle') {
-      return reply.redirect(`${prefix}/raw/${hash}/`);
+      const qs = request.query?.token ? `?token=${encodeURIComponent(request.query.token)}` : '';
+      return reply.redirect(`${prefix}/raw/${hash}/${qs}`);
     }
     return serveHtmlFile(hash, reply);
   });
@@ -63,6 +96,7 @@ export default async function rawRoutes(app) {
     if (!row) {
       return reply.code(404).send({ error: 'not_found' });
     }
+    if (!checkAccess(hash, request, reply)) return;
 
     if (row.kind !== 'bundle') {
       if (rest === '' || rest === '/') {

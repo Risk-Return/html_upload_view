@@ -72,7 +72,14 @@
     "invalid_zip": "The ZIP file is corrupted or unreadable.",
     "empty_zip": "The ZIP file is empty.",
     "unsafe_zip_entry": "The ZIP contains unsafe file paths.",
-    "no_entry_html": "The ZIP must contain an index.html (or main.html)."
+    "no_entry_html": "The ZIP must contain an index.html (or main.html).",
+    "token_required": "An access token is required to view this content.",
+    "invalid_token": "Invalid access token.",
+    "token_exhausted": "This token has reached its visit limit.",
+    "token_exists": "This token already exists.",
+    "token_required_field": "Token is required.",
+    "invalid_max_uses": "Max visits must be an integer.",
+    "forbidden": "You do not have permission to manage this upload."
   },
   "lang": {
     "switch": "中文",
@@ -80,5 +87,21 @@
   },
   "footer": {
     "note": "Files are stored privately on the server and only accessible via the generated URL."
+  },
+  "tokens": {
+    "title": "Access Protection (optional)",
+    "description": "Set passwords/tokens to protect your uploads. Each token can have a visit limit.",
+    "add": "Add token",
+    "enterToken": "Enter token/password:",
+    "enterMax": "Max visits (-1 = unlimited):",
+    "unlimited": "Unlimited",
+    "maxVisits": "Max visits",
+    "used": "Used",
+    "noTokens": "No tokens configured.",
+    "manageTitle": "Manage Access Tokens",
+    "manageTokens": "Tokens",
+    "gatePrompt": "This content is protected. Enter the access token to view.",
+    "gateSubmit": "Unlock",
+    "gateError": "Invalid or exhausted token."
   }
 }

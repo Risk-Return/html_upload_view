@@ -35,8 +35,57 @@ async function init() {
   }
   const hash = match[1];
   const iframe = $('#preview');
-  iframe.setAttribute('src', `raw/${hash}/`);
-  iframe.addEventListener('load', () => { try { iframe.contentWindow.focus(); } catch(e) {} });
+  const tokenGate = $('#token-gate');
+  const tokenInput = $('#token-input');
+  const tokenSubmit = $('#token-submit');
+  const tokenError = $('#token-error');
+
+  let accessToken = '';
+
+  async function checkTokenRequired() {
+    try {
+      const res = await fetch(`api/uploads/${hash}/token-check`);
+      if (!res.ok) return false;
+      const data = await res.json();
+      return data.requiresToken;
+    } catch {
+      return false;
+    }
+  }
+
+  async function loadPreview() {
+    const qs = accessToken ? `?token=${encodeURIComponent(accessToken)}` : '';
+    iframe.setAttribute('src', `raw/${hash}/${qs}`);
+    iframe.addEventListener('load', () => { try { iframe.contentWindow.focus(); } catch(e) {} });
+  }
+
+  const requiresToken = await checkTokenRequired();
+
+  if (requiresToken) {
+    iframe.style.display = 'none';
+    tokenGate.hidden = false;
+
+    tokenSubmit.addEventListener('click', async () => {
+      const token = tokenInput.value.trim();
+      if (!token) return;
+      tokenError.hidden = true;
+      const res = await fetch(`raw/${hash}?token=${encodeURIComponent(token)}`, { method: 'GET' });
+      if (res.ok) {
+        accessToken = token;
+        tokenGate.hidden = true;
+        iframe.style.display = '';
+        loadPreview();
+      } else {
+        tokenError.hidden = false;
+      }
+    });
+
+    tokenInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') tokenSubmit.click();
+    });
+  } else {
+    loadPreview();
+  }
 
   window.addEventListener('message', (e) => {
     if (e.data && e.data.type === 'presentation-mode') {

@@ -1,6 +1,7 @@
 import { generateHash } from '../hash.js';
 import { clientIp } from '../ip.js';
 import { BundleError } from '../bundle.js';
+import { sanitizeTokens } from './tokens.js';
 
 const HTML_EXT = /\.html?$/i;
 const ZIP_EXT = /\.zip$/i;
@@ -43,11 +44,19 @@ export default async function uploadRoutes(app) {
     const ip = clientIp(request);
     const uploadedBy = request.user?.email ?? null;
     const collected = [];
+    let accessTokensRaw = null;
     let oversize = false;
     let invalidType = false;
 
     try {
       for await (const part of request.parts()) {
+        if (part.type === 'field') {
+          const fieldname = part.fieldname;
+          if (fieldname === 'access_tokens') {
+            accessTokensRaw = part.value;
+          }
+          continue;
+        }
         if (part.type !== 'file') continue;
         const filename = part.filename || '';
         const mime = (part.mimetype || '').toLowerCase();
@@ -202,6 +211,24 @@ export default async function uploadRoutes(app) {
         sizeBytes: buffer.length,
         url: buildPreviewUrl(config.publicHost, config.basePath, hash),
       });
+    }
+
+    let parsedTokens = null;
+    if (accessTokensRaw) {
+      try {
+        const parsed = JSON.parse(accessTokensRaw);
+        if (Array.isArray(parsed)) {
+          parsedTokens = sanitizeTokens(parsed);
+        }
+      } catch {
+        // ignore invalid JSON
+      }
+    }
+
+    if (parsedTokens && parsedTokens.length > 0) {
+      for (const r of results) {
+        db.replaceAccessTokens(r.hash, parsedTokens);
+      }
     }
 
     return reply.code(201).send({

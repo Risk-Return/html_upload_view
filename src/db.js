@@ -41,6 +41,20 @@ CREATE TABLE IF NOT EXISTS verification_codes (
 
 CREATE INDEX IF NOT EXISTS idx_vc_email_expires
   ON verification_codes(email, expires_at);
+
+CREATE TABLE IF NOT EXISTS access_tokens (
+  id          INTEGER PRIMARY KEY AUTOINCREMENT,
+  upload_hash TEXT NOT NULL,
+  token       TEXT NOT NULL,
+  max_uses    INTEGER NOT NULL DEFAULT -1,
+  used_count  INTEGER NOT NULL DEFAULT 0,
+  created_at  INTEGER NOT NULL,
+  UNIQUE(upload_hash, token),
+  FOREIGN KEY (upload_hash) REFERENCES uploads(hash) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_access_tokens_hash
+  ON access_tokens(upload_hash);
 `;
 
 export class Db {
@@ -112,6 +126,42 @@ export class Db {
     `);
     this._deleteExpiredCodes = this.db.prepare(`
       DELETE FROM verification_codes WHERE expires_at < ?
+    `);
+
+    this._insertAccessToken = this.db.prepare(`
+      INSERT INTO access_tokens (upload_hash, token, max_uses, used_count, created_at)
+      VALUES (@uploadHash, @token, @maxUses, 0, @createdAt)
+    `);
+    this._getAccessTokens = this.db.prepare(`
+      SELECT id, upload_hash AS uploadHash, token, max_uses AS maxUses,
+             used_count AS usedCount, created_at AS createdAt
+      FROM access_tokens WHERE upload_hash = ?
+      ORDER BY created_at ASC
+    `);
+    this._getAccessToken = this.db.prepare(`
+      SELECT id, upload_hash AS uploadHash, token, max_uses AS maxUses,
+             used_count AS usedCount, created_at AS createdAt
+      FROM access_tokens WHERE id = ?
+    `);
+    this._getAccessTokenByToken = this.db.prepare(`
+      SELECT id, upload_hash AS uploadHash, token, max_uses AS maxUses,
+             used_count AS usedCount, created_at AS createdAt
+      FROM access_tokens WHERE upload_hash = ? AND token = ?
+    `);
+    this._deleteAccessToken = this.db.prepare(`
+      DELETE FROM access_tokens WHERE id = ?
+    `);
+    this._deleteAccessTokensByHash = this.db.prepare(`
+      DELETE FROM access_tokens WHERE upload_hash = ?
+    `);
+    this._updateAccessToken = this.db.prepare(`
+      UPDATE access_tokens SET token = @token, max_uses = @maxUses WHERE id = @id
+    `);
+    this._incrementTokenUsage = this.db.prepare(`
+      UPDATE access_tokens SET used_count = used_count + 1 WHERE id = ?
+    `);
+    this._hasAccessTokens = this.db.prepare(`
+      SELECT 1 FROM access_tokens WHERE upload_hash = ? LIMIT 1
     `);
   }
 
@@ -192,6 +242,82 @@ export class Db {
 
   deleteExpiredCodes() {
     this._deleteExpiredCodes.run(Date.now());
+  }
+
+  addAccessToken(uploadHash, token, maxUses = -1) {
+    if (!uploadHash) throw new Error('uploadHash is required');
+    if (!token || typeof token !== 'string' || token.length === 0) {
+      throw new Error('token is required');
+    }
+    if (!Number.isInteger(maxUses)) throw new Error('maxUses must be an integer');
+    try {
+      this._insertAccessToken.run({
+        uploadHash,
+        token,
+        maxUses,
+        createdAt: Date.now(),
+      });
+      return this._getAccessTokenByToken.get(uploadHash, token);
+    } catch (err) {
+      if (err.code === 'SQLITE_CONSTRAINT_UNIQUE') return null;
+      throw err;
+    }
+  }
+
+  getAccessTokens(uploadHash) {
+    return this._getAccessTokens.all(uploadHash);
+  }
+
+  getAccessToken(id) {
+    return this._getAccessToken.get(id) ?? null;
+  }
+
+  deleteAccessToken(id) {
+    return this._deleteAccessToken.run(id).changes > 0;
+  }
+
+  updateAccessToken(id, token, maxUses) {
+    if (!token || typeof token !== 'string' || token.length === 0) {
+      throw new Error('token is required');
+    }
+    if (!Number.isInteger(maxUses)) throw new Error('maxUses must be an integer');
+    try {
+      return this._updateAccessToken.run({ id, token, maxUses }).changes > 0;
+    } catch (err) {
+      if (err.code === 'SQLITE_CONSTRAINT_UNIQUE') return false;
+      throw err;
+    }
+  }
+
+  replaceAccessTokens(uploadHash, tokens) {
+    if (!Array.isArray(tokens)) throw new Error('tokens must be an array');
+    return this.transaction(() => {
+      this._deleteAccessTokensByHash.run(uploadHash);
+      const result = [];
+      for (const t of tokens) {
+        const row = this.addAccessToken(uploadHash, t.token, t.maxUses ?? -1);
+        if (row) result.push(row);
+      }
+      return result;
+    })();
+  }
+
+  hasAccessTokens(uploadHash) {
+    return this._hasAccessTokens.get(uploadHash) !== undefined;
+  }
+
+  validateAccessToken(uploadHash, token) {
+    if (!uploadHash || !token) return { valid: false, remaining: 0 };
+    return this.transaction(() => {
+      const row = this._getAccessTokenByToken.get(uploadHash, token);
+      if (!row) return { valid: false, remaining: 0 };
+      if (row.maxUses !== -1 && row.usedCount >= row.maxUses) {
+        return { valid: false, remaining: 0, exhausted: true };
+      }
+      this._incrementTokenUsage.run(row.id);
+      const remaining = row.maxUses === -1 ? -1 : row.maxUses - (row.usedCount + 1);
+      return { valid: true, remaining };
+    })();
   }
 
   close() {

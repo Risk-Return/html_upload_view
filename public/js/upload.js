@@ -7,6 +7,7 @@ const ACCEPT_RE = /\.(html?|zip)$/i;
 const state = {
   files: [],
   uploading: false,
+  tokens: [],
 };
 
 const els = {};
@@ -128,6 +129,9 @@ async function submit() {
 
   const fd = new FormData();
   for (const f of state.files) fd.append('files', f, f.name);
+  if (state.tokens.length > 0) {
+    fd.append('access_tokens', JSON.stringify(state.tokens));
+  }
 
   try {
     const res = await fetch('api/upload', { method: 'POST', body: fd });
@@ -155,8 +159,125 @@ function renderResults(data) {
     els.resultList.appendChild(buildResultItem(item));
   }
   state.files = [];
+  state.tokens = [];
   renderFiles();
+  renderTokenList();
   loadHistory();
+}
+
+function renderTokenList() {
+  const list = els.tokenList;
+  if (!list) return;
+  list.innerHTML = '';
+  state.tokens.forEach((tok, idx) => {
+    const li = document.createElement('li');
+    li.className = 'token-item';
+    li.style.cssText = 'display:flex;align-items:center;gap:8px;padding:8px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg-card)';
+    const tokenSpan = document.createElement('span');
+    tokenSpan.style.cssText = 'flex:1;font-family:var(--font-mono);font-size:13px;color:var(--text)';
+    tokenSpan.textContent = tok.token;
+    const maxSpan = document.createElement('span');
+    maxSpan.style.cssText = 'font-size:12px;color:var(--text-soft);white-space:nowrap';
+    maxSpan.textContent = tok.maxUses === -1 ? i18n.t('tokens.unlimited') : `${i18n.t('tokens.maxVisits')}: ${tok.maxUses}`;
+    const removeBtn = document.createElement('button');
+    removeBtn.type = 'button';
+    removeBtn.className = 'icon-btn';
+    removeBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+    removeBtn.addEventListener('click', () => {
+      state.tokens.splice(idx, 1);
+      renderTokenList();
+    });
+    li.appendChild(tokenSpan);
+    li.appendChild(maxSpan);
+    li.appendChild(removeBtn);
+    list.appendChild(li);
+  });
+}
+
+function addTokenEntry() {
+  const token = prompt(i18n.t('tokens.enterToken'));
+  if (!token || !token.trim()) return;
+  const maxStr = prompt(i18n.t('tokens.enterMax'), '-1');
+  const maxUses = parseInt(maxStr, 10);
+  if (isNaN(maxUses)) return;
+  state.tokens.push({ token: token.trim(), maxUses });
+  renderTokenList();
+}
+
+let modalState = { hash: null, fileName: null };
+
+async function openTokenModal(hash, fileName) {
+  modalState = { hash, fileName };
+  els.tokenModal.hidden = false;
+  els.tokenModalFile.textContent = fileName;
+  els.tokenModalInput.value = '';
+  els.tokenModalMax.value = '-1';
+  await loadModalTokens();
+}
+
+async function loadModalTokens() {
+  const list = els.tokenModalList;
+  list.innerHTML = '';
+  try {
+    const res = await fetch(`api/uploads/${modalState.hash}/tokens`);
+    if (!res.ok) return;
+    const data = await res.json();
+    if (!data.tokens || data.tokens.length === 0) {
+      const li = document.createElement('li');
+      li.style.cssText = 'font-size:13px;color:var(--text-soft);padding:8px 0';
+      li.textContent = i18n.t('tokens.noTokens');
+      list.appendChild(li);
+      return;
+    }
+    data.tokens.forEach((tok) => {
+      const li = document.createElement('li');
+      li.style.cssText = 'display:flex;align-items:center;gap:8px;padding:8px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg-card)';
+      const info = document.createElement('div');
+      info.style.cssText = 'flex:1;min-width:0';
+      const tokenDiv = document.createElement('div');
+      tokenDiv.style.cssText = 'font-family:var(--font-mono);font-size:13px;color:var(--text)';
+      tokenDiv.textContent = tok.token;
+      const usageDiv = document.createElement('div');
+      usageDiv.style.cssText = 'font-size:11px;color:var(--text-soft)';
+      const maxLabel = tok.maxUses === -1 ? i18n.t('tokens.unlimited') : `${tok.maxUses}`;
+      usageDiv.textContent = `${i18n.t('tokens.used')}: ${tok.usedCount} / ${maxLabel}`;
+      info.appendChild(tokenDiv);
+      info.appendChild(usageDiv);
+      const delBtn = document.createElement('button');
+      delBtn.type = 'button';
+      delBtn.className = 'icon-btn';
+      delBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>';
+      delBtn.addEventListener('click', async () => {
+        await fetch(`api/uploads/${modalState.hash}/tokens/${tok.id}`, { method: 'DELETE' });
+        loadModalTokens();
+      });
+      li.appendChild(info);
+      li.appendChild(delBtn);
+      list.appendChild(li);
+    });
+  } catch {
+    // silent
+  }
+}
+
+async function modalAddToken() {
+  const token = els.tokenModalInput.value.trim();
+  if (!token) return;
+  const maxUses = parseInt(els.tokenModalMax.value, 10);
+  if (isNaN(maxUses)) return;
+  const res = await fetch(`api/uploads/${modalState.hash}/tokens`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token, maxUses }),
+  });
+  if (res.ok) {
+    els.tokenModalInput.value = '';
+    els.tokenModalMax.value = '-1';
+    loadModalTokens();
+  } else {
+    const data = await res.json().catch(() => ({}));
+    showToast(i18n.t(`errors.${data.error}`, data) || i18n.t('errors.storage_failure'));
+  }
 }
 
 function timeAgo(ts) {
@@ -206,12 +327,24 @@ function renderHistory(items) {
         <span class="hi-size"></span>
         <span class="hi-time"></span>
       </div>
-      <div class="hi-url"></div>`;
+      <div class="hi-url"></div>
+      <button type="button" class="hi-token-btn" title="${i18n.t('tokens.manageTokens')}" style="margin-top:6px;font-size:11px;padding:4px 10px;border:1px solid var(--border);border-radius:6px;background:transparent;color:var(--text-soft);cursor:pointer;display:inline-flex;align-items:center;gap:4px">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px;stroke:currentColor"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        <span data-i18n="tokens.manageTokens">Tokens</span>
+      </button>`;
     li.querySelector('.hi-name').textContent = item.originalName;
     li.querySelector('.hi-size').textContent = formatBytes(item.sizeBytes);
     li.querySelector('.hi-time').textContent = timeAgo(item.createdAt);
     li.querySelector('.hi-url').textContent = item.url;
-    li.addEventListener('click', () => copyToClipboard(item.url));
+    li.querySelector('.hi-url').addEventListener('click', (e) => {
+      e.stopPropagation();
+      copyToClipboard(item.url);
+    });
+    li.querySelector('.hi-token-btn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      const hashMatch = item.url.match(/\/view\/([0-9A-Za-z]{12})/);
+      if (hashMatch) openTokenModal(hashMatch[1], item.originalName);
+    });
     els.historyList.appendChild(li);
   });
 }
@@ -255,6 +388,18 @@ async function init() {
   els.historyList = $('#history-list');
   els.historyLoading = $('#history-loading');
   els.historyEmpty = $('#history-empty');
+  els.tokenToggle = $('#token-toggle');
+  els.tokenBody = $('#token-body');
+  els.tokenChevron = $('#token-chevron');
+  els.tokenList = $('#token-list');
+  els.tokenAddBtn = $('#token-add-btn');
+  els.tokenModal = $('#token-modal');
+  els.tokenModalClose = $('#token-modal-close');
+  els.tokenModalFile = $('#token-modal-file');
+  els.tokenModalList = $('#token-modal-list');
+  els.tokenModalInput = $('#token-modal-input');
+  els.tokenModalMax = $('#token-modal-max');
+  els.tokenModalAdd = $('#token-modal-add');
 
   await i18n.init();
 
@@ -275,8 +420,8 @@ async function init() {
 
   i18n.onChange(() => {
     renderFiles();
+    renderTokenList();
     if (els.error && !els.error.hidden) {
-      // re-translate by clearing — caller would need to re-trigger; safest: clear
       setError('');
     }
   });
@@ -296,6 +441,34 @@ async function init() {
     await fetch('api/auth/logout', { method: 'POST' });
     window.location.href = 'login';
   });
+
+  if (els.tokenToggle) {
+    els.tokenToggle.addEventListener('click', () => {
+      els.tokenBody.hidden = !els.tokenBody.hidden;
+      if (els.tokenChevron) {
+        els.tokenChevron.style.transform = els.tokenBody.hidden ? '' : 'rotate(180deg)';
+      }
+    });
+  }
+  if (els.tokenAddBtn) {
+    els.tokenAddBtn.addEventListener('click', addTokenEntry);
+  }
+  if (els.tokenModalClose) {
+    els.tokenModalClose.addEventListener('click', () => { els.tokenModal.hidden = true; });
+  }
+  if (els.tokenModal) {
+    els.tokenModal.addEventListener('click', (e) => {
+      if (e.target === els.tokenModal) els.tokenModal.hidden = true;
+    });
+  }
+  if (els.tokenModalAdd) {
+    els.tokenModalAdd.addEventListener('click', modalAddToken);
+  }
+  if (els.tokenModalInput) {
+    els.tokenModalInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') modalAddToken();
+    });
+  }
 
   renderFiles();
 }

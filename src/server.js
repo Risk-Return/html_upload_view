@@ -13,6 +13,7 @@ import rawRoutes from './routes/raw.js';
 import viewRoutes from './routes/view.js';
 import pageRoutes, { loginPageRoute } from './routes/pages.js';
 import authRoutes from './routes/auth.js';
+import tokenRoutes from './routes/tokens.js';
 
 export async function buildServer(configOverrides = {}) {
   const config = loadConfig(configOverrides);
@@ -80,6 +81,7 @@ export async function buildServer(configOverrides = {}) {
       await scope.register(async (authScope) => {
         authScope.addHook('preHandler', requireAuth);
         await authScope.register(uploadRoutes);
+        await authScope.register(tokenRoutes);
       });
 
       await scope.register(async (authScope) => {
