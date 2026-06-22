@@ -35,7 +35,7 @@ async function init() {
   }
   const hash = match[1];
   const iframe = $('#preview');
-  iframe.setAttribute('src', `raw/${hash}`);
+  iframe.setAttribute('src', `raw/${hash}/`);
 
   const fullUrl = window.location.href;
   const urlPill = $('#url-pill');

@@ -2,7 +2,7 @@
   "appName": "HTML Vault",
   "tagline": "Upload HTML files. Share them with a clean, opaque link.",
   "upload": {
-    "dropTitle": "Drop HTML files here",
+    "dropTitle": "Drop HTML or ZIP files here",
     "dropSubtitle": "or click to browse — up to 5 per day per IP",
     "browse": "Browse files",
     "filesHeading": "Selected files",
@@ -63,12 +63,16 @@
   "errors": {
     "quota_exceeded": "Daily upload limit reached. Try again after UTC midnight.",
     "file_too_large": "One or more files exceed the {maxFileSizeMb} MB limit.",
-    "invalid_file_type": "Only .html and .htm files are accepted.",
-    "no_files": "Please select at least one HTML file.",
+    "invalid_file_type": "Only .html, .htm and .zip files are accepted.",
+    "no_files": "Please select at least one HTML or ZIP file.",
     "multipart_required": "Invalid request format.",
     "storage_failure": "Server error while saving files. Please retry.",
     "network": "Network error. Please retry.",
-    "unauthorized": "Please sign in to continue."
+    "unauthorized": "Please sign in to continue.",
+    "invalid_zip": "The ZIP file is corrupted or unreadable.",
+    "empty_zip": "The ZIP file is empty.",
+    "unsafe_zip_entry": "The ZIP contains unsafe file paths.",
+    "no_entry_html": "The ZIP must contain an index.html (or main.html)."
   },
   "lang": {
     "switch": "中文",

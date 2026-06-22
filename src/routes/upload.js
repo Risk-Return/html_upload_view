@@ -1,7 +1,9 @@
 import { generateHash } from '../hash.js';
 import { clientIp } from '../ip.js';
+import { BundleError } from '../bundle.js';
 
 const HTML_EXT = /\.html?$/i;
+const ZIP_EXT = /\.zip$/i;
 const ALLOWED_MIME = new Set([
   'text/html',
   'application/xhtml+xml',
@@ -16,7 +18,7 @@ function buildPreviewUrl(publicHost, basePath, hash) {
 }
 
 export default async function uploadRoutes(app) {
-  const { config, db, storage, rateLimiter } = app;
+  const { config, db, storage, bundles, rateLimiter } = app;
   const maxBytes = config.maxFileSizeMb * 1024 * 1024;
 
   app.get('/api/uploads', async (request, reply) => {
@@ -49,8 +51,10 @@ export default async function uploadRoutes(app) {
         if (part.type !== 'file') continue;
         const filename = part.filename || '';
         const mime = (part.mimetype || '').toLowerCase();
+        const isZip = ZIP_EXT.test(filename);
+        const isHtml = HTML_EXT.test(filename) && ALLOWED_MIME.has(mime);
 
-        if (!HTML_EXT.test(filename) || !ALLOWED_MIME.has(mime)) {
+        if (!isZip && !isHtml) {
           invalidType = true;
           await part.toBuffer().catch(() => {});
           continue;
@@ -72,13 +76,18 @@ export default async function uploadRoutes(app) {
           continue;
         }
 
+        if (isZip) {
+          collected.push({ kind: 'bundle', filename, buffer: buf });
+          continue;
+        }
+
         const head = buf.slice(0, 512).toString('utf-8').trimStart().toLowerCase();
         if (head.length > 0 && head[0] !== '<') {
           invalidType = true;
           continue;
         }
 
-        collected.push({ filename, buffer: buf });
+        collected.push({ kind: 'html', filename, buffer: buf });
       }
     } catch (err) {
       if (err && err.code === 'FST_REQ_FILE_TOO_LARGE') {
@@ -116,7 +125,47 @@ export default async function uploadRoutes(app) {
 
     const now = Date.now();
     const results = [];
-    for (const { filename, buffer } of collected) {
+    for (const item of collected) {
+      if (item.kind === 'bundle') {
+        let hash = generateHash();
+        if (db.getUpload(hash)) hash = generateHash();
+
+        let extract;
+        try {
+          extract = await bundles.extractZip(hash, item.buffer);
+        } catch (err) {
+          if (err instanceof BundleError) {
+            return reply.code(422).send({ error: err.code });
+          }
+          request.log.error({ err }, 'bundle extract failed');
+          return reply.code(500).send({ error: 'storage_failure' });
+        }
+
+        const inserted = db.insertUpload({
+          hash,
+          originalName: item.filename,
+          sizeBytes: extract.totalBytes,
+          ip,
+          createdAt: now,
+          uploadedBy,
+          kind: 'bundle',
+          entryFile: extract.entryFile,
+        });
+        if (!inserted) {
+          await bundles.remove(hash).catch(() => {});
+          request.log.error({ hash }, 'hash collision after retry (bundle)');
+          return reply.code(500).send({ error: 'storage_failure' });
+        }
+        results.push({
+          hash,
+          originalName: item.filename,
+          sizeBytes: extract.totalBytes,
+          url: buildPreviewUrl(config.publicHost, config.basePath, hash),
+        });
+        continue;
+      }
+
+      const { filename, buffer } = item;
       let hash = generateHash();
       let inserted = db.insertUpload({
         hash,

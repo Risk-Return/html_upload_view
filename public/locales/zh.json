@@ -2,7 +2,7 @@
   "appName": "HTML 寄存",
   "tagline": "上传 HTML 文件，使用简洁的不透明链接分享。",
   "upload": {
-    "dropTitle": "把 HTML 文件拖到这里",
+    "dropTitle": "把 HTML 或 ZIP 文件拖到这里",
     "dropSubtitle": "或点击选择 — 每个 IP 每日最多 5 个",
     "browse": "选择文件",
     "filesHeading": "已选文件",
@@ -63,12 +63,16 @@
   "errors": {
     "quota_exceeded": "今日上传次数已用完，请在 UTC 零点后再试。",
     "file_too_large": "有文件超过 {maxFileSizeMb} MB 限制。",
-    "invalid_file_type": "仅接受 .html 和 .htm 文件。",
-    "no_files": "请选择至少一个 HTML 文件。",
+    "invalid_file_type": "仅接受 .html、.htm 和 .zip 文件。",
+    "no_files": "请选择至少一个 HTML 或 ZIP 文件。",
     "multipart_required": "请求格式无效。",
     "storage_failure": "服务器保存文件失败，请重试。",
     "network": "网络错误，请重试。",
-    "unauthorized": "请先登录再继续。"
+    "unauthorized": "请先登录再继续。",
+    "invalid_zip": "ZIP 文件已损坏或无法读取。",
+    "empty_zip": "ZIP 文件为空。",
+    "unsafe_zip_entry": "ZIP 中包含不安全的文件路径。",
+    "no_entry_html": "ZIP 中必须包含 index.html（或 main.html）。"
   },
   "lang": {
     "switch": "EN",

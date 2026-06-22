@@ -3,6 +3,7 @@
 dev/
 node_modules/
 data/
+examples/
 coverage/
 *.log
 .DS_Store

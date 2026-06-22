@@ -17,6 +17,7 @@
     "@fastify/cookie": "^9.4.0",
     "@fastify/multipart": "^8.3.0",
     "@fastify/static": "^7.0.4",
+    "adm-zip": "^0.5.17",
     "better-sqlite3": "^11.3.0",
     "dotenv": "^16.4.5",
     "fastify": "^4.28.1",

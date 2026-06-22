@@ -2,7 +2,7 @@ import { I18n } from './i18n.js';
 
 const i18n = new I18n();
 
-const HTML_RE = /\.html?$/i;
+const ACCEPT_RE = /\.(html?|zip)$/i;
 
 const state = {
   files: [],
@@ -69,7 +69,7 @@ function renderFiles() {
 function addFiles(fileList) {
   setError('');
   const incoming = Array.from(fileList || []);
-  const valid = incoming.filter((f) => HTML_RE.test(f.name));
+  const valid = incoming.filter((f) => ACCEPT_RE.test(f.name));
   if (valid.length < incoming.length) {
     setError(i18n.t('errors.invalid_file_type'));
   }

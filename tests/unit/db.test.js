@@ -25,6 +25,8 @@ test('insertUpload + getUpload roundtrip', () => {
       ip: '127.0.0.1',
       createdAt: 1700000000000,
       uploadedBy: null,
+      kind: 'html',
+      entryFile: null,
     });
   } finally {
     db.close();

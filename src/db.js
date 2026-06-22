@@ -9,7 +9,9 @@ CREATE TABLE IF NOT EXISTS uploads (
   size_bytes    INTEGER NOT NULL,
   ip            TEXT NOT NULL,
   created_at    INTEGER NOT NULL,
-  uploaded_by   TEXT
+  uploaded_by   TEXT,
+  kind          TEXT NOT NULL DEFAULT 'html',
+  entry_file    TEXT
 );
 
 CREATE INDEX IF NOT EXISTS idx_uploads_ip_created
@@ -55,17 +57,18 @@ export class Db {
     this._migrate();
 
     this._insertUpload = this.db.prepare(`
-      INSERT INTO uploads (hash, original_name, size_bytes, ip, created_at, uploaded_by)
-      VALUES (@hash, @originalName, @sizeBytes, @ip, @createdAt, @uploadedBy)
+      INSERT INTO uploads (hash, original_name, size_bytes, ip, created_at, uploaded_by, kind, entry_file)
+      VALUES (@hash, @originalName, @sizeBytes, @ip, @createdAt, @uploadedBy, @kind, @entryFile)
     `);
     this._getUpload = this.db.prepare(`
       SELECT hash, original_name AS originalName, size_bytes AS sizeBytes,
-             ip, created_at AS createdAt, uploaded_by AS uploadedBy
+             ip, created_at AS createdAt, uploaded_by AS uploadedBy,
+             kind, entry_file AS entryFile
       FROM uploads WHERE hash = ?
     `);
     this._getUploadsByUser = this.db.prepare(`
       SELECT hash, original_name AS originalName, size_bytes AS sizeBytes,
-             created_at AS createdAt
+             created_at AS createdAt, kind, entry_file AS entryFile
       FROM uploads WHERE uploaded_by = ?
       ORDER BY created_at DESC
       LIMIT 50
@@ -114,6 +117,8 @@ export class Db {
 
   insertUpload(row) {
     if (row.uploadedBy === undefined) row.uploadedBy = null;
+    if (row.kind === undefined) row.kind = 'html';
+    if (row.entryFile === undefined) row.entryFile = null;
     try {
       this._insertUpload.run(row);
       return true;
@@ -195,9 +200,15 @@ export class Db {
 
   _migrate() {
     const cols = this.db.pragma('table_info(uploads)');
-    const hasUploadedBy = cols.some((c) => c.name === 'uploaded_by');
-    if (!hasUploadedBy) {
+    const has = (name) => cols.some((c) => c.name === name);
+    if (!has('uploaded_by')) {
       this.db.exec('ALTER TABLE uploads ADD COLUMN uploaded_by TEXT');
+    }
+    if (!has('kind')) {
+      this.db.exec("ALTER TABLE uploads ADD COLUMN kind TEXT NOT NULL DEFAULT 'html'");
+    }
+    if (!has('entry_file')) {
+      this.db.exec('ALTER TABLE uploads ADD COLUMN entry_file TEXT');
     }
   }
 }

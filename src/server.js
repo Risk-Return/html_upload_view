@@ -5,6 +5,7 @@ import fastifyCookie from '@fastify/cookie';
 import { loadConfig, projectPaths } from './config.js';
 import { Db } from './db.js';
 import { Storage } from './storage.js';
+import { BundleStore } from './bundle.js';
 import { RateLimiter } from './ratelimit.js';
 import { authRequired, pageAuthRequired, optionalAuth } from './auth/middleware.js';
 import uploadRoutes from './routes/upload.js';
@@ -23,11 +24,13 @@ export async function buildServer(configOverrides = {}) {
 
   const db = new Db(config.dbPath);
   const storage = new Storage(config.uploadsDir);
+  const bundles = new BundleStore(config.sitesDir);
   const rateLimiter = new RateLimiter(db, { dailyLimit: config.dailyUploadLimit });
 
   app.decorate('config', config);
   app.decorate('db', db);
   app.decorate('storage', storage);
+  app.decorate('bundles', bundles);
   app.decorate('rateLimiter', rateLimiter);
 
   app.addHook('onClose', async () => {
@@ -55,6 +58,14 @@ export async function buildServer(configOverrides = {}) {
         root: projectPaths.publicDir,
         prefix: '/static/',
         decorateReply: false,
+      });
+
+      // Decorates reply.sendFile (with range + mime support) for serving
+      // extracted bundle files. No routes are registered (serve: false).
+      await scope.register(fastifyStatic, {
+        root: config.sitesDir,
+        serve: false,
+        decorateReply: true,
       });
 
       scope.get('/api/health', async () => ({ status: 'ok' }));
