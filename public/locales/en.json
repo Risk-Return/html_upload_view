@@ -88,6 +88,31 @@
   "footer": {
     "note": "Files are stored privately on the server and only accessible via the generated URL."
   },
+  "help": {
+    "title": "How to use this tool",
+    "upload": {
+      "title": "Uploading files",
+      "single": "For a single HTML file: drag and drop an .html or .htm file onto the dropzone, then click Upload.",
+      "zip": "For multi-file presentations (slides with CSS, JS, images, video): package everything into a .zip file and upload it. The server extracts the ZIP automatically.",
+      "limit": "Maximum file size: 50 MB. Daily limit: 5 uploads per IP (resets at UTC midnight)."
+    },
+    "zip": {
+      "title": "Organizing a ZIP bundle",
+      "entry": "The ZIP must contain an index.html (or main.html) at the top level. This is the entry point for the presentation.",
+      "structure": "Place assets in subfolders and reference them with relative paths. Example structure:",
+      "relative": "Use relative paths in your HTML (e.g. assets/runtime.js, not /assets/runtime.js). The server serves all files from the bundle root.",
+      "nesting": "If all files are inside a single top-level folder (e.g. my-deck/), the server strips that prefix automatically — no need to flatten.",
+      "video": "Video files support HTTP range requests, so seeking works in the browser."
+    },
+    "tokens": {
+      "title": "Setting access tokens",
+      "what": "Access tokens are passwords that protect your uploaded content. Viewers must enter a valid token to see the page.",
+      "how": "After selecting files, expand the Access Protection panel. Click Add token for each file, enter a password, and optionally set a max visit count.",
+      "max": "Set max visits to -1 for unlimited access, or a positive number to limit how many times the token can be used.",
+      "manage": "You can manage tokens later from the upload history sidebar — click the lock icon on any item.",
+      "share": "Share the view URL along with the token password with your audience. Without the token, the content is inaccessible."
+    }
+  },
   "tokens": {
     "title": "Access Protection (optional)",
     "description": "Set passwords/tokens to protect your uploads. Each token can have a visit limit.",

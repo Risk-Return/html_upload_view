@@ -50,6 +50,60 @@
               <p data-i18n="tagline">Upload HTML files. Share them with a clean, opaque link.</p>
             </section>
 
+            <details class="help-panel" id="help-panel">
+              <summary class="help-summary">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="help-icon"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                <span data-i18n="help.title">How to use this tool</span>
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="help-chevron"><polyline points="6 9 12 15 18 9"/></svg>
+              </summary>
+              <div class="help-body">
+                <div class="help-section">
+                  <h3 data-i18n="help.upload.title">Uploading files</h3>
+                  <ul>
+                    <li><span data-i18n="help.upload.single">For a single HTML file: drag and drop an .html or .htm file onto the dropzone, then click Upload.</span></li>
+                    <li><span data-i18n="help.upload.zip">For multi-file presentations (slides with CSS, JS, images, video): package everything into a .zip file and upload it. The server extracts the ZIP automatically.</span></li>
+                    <li><span data-i18n="help.upload.limit">Maximum file size: 50 MB. Daily limit: 5 uploads per IP (resets at UTC midnight).</span></li>
+                  </ul>
+                </div>
+                <div class="help-section">
+                  <h3 data-i18n="help.zip.title">Organizing a ZIP bundle</h3>
+                  <ul>
+                    <li><span data-i18n="help.zip.entry">The ZIP must contain an <code>index.html</code> (or <code>main.html</code>) at the top level. This is the entry point for the presentation.</span></li>
+                    <li><span data-i18n="help.zip.structure">Place assets in subfolders and reference them with relative paths. Example structure:</span></li>
+                  </ul>
+                  <pre class="help-code">my-deck.zip
+├── index.html          ← entry file (required)
+├── style.css           ← custom styles
+├── assets/
+│   ├── runtime.js      ← slide runtime / scripts
+│   ├── base.css        ← base deck styles
+│   ├── fonts.css
+│   ├── animations/
+│   │   └── animations.css
+│   └── themes/
+│       ├── minimal-white.css
+│       └── corporate-clean.css
+└── media/
+    └── video.mp4</pre>
+                  <ul>
+                    <li><span data-i18n="help.zip.relative">Use relative paths in your HTML (e.g. <code>assets/runtime.js</code>, not <code>/assets/runtime.js</code>). The server serves all files from the bundle root.</span></li>
+                    <li><span data-i18n="help.zip.nesting">If all files are inside a single top-level folder (e.g. <code>my-deck/</code>), the server strips that prefix automatically — no need to flatten.</span></li>
+                    <li><span data-i18n="help.zip.video">Video files support HTTP range requests, so seeking works in the browser.</span></li>
+                  </ul>
+                </div>
+                <div class="help-section">
+                  <h3 data-i18n="help.tokens.title">Setting access tokens</h3>
+                  <ul>
+                    <li><span data-i18n="help.tokens.what">Access tokens are passwords that protect your uploaded content. Viewers must enter a valid token to see the page.</span></li>
+                    <li><span data-i18n="help.tokens.how">After selecting files, expand the <strong>Access Protection</strong> panel. Click <strong>Add token</strong> for each file, enter a password, and optionally set a max visit count.</span></li>
+                    <li><span data-i18n="help.tokens.max">Set max visits to <code>-1</code> for unlimited access, or a positive number to limit how many times the token can be used.</span></li>
+                    <li><span data-i18n="help.tokens.manage">You can manage tokens later from the upload history sidebar — click the lock icon on any item.</span></li>
+                    <li><span data-i18n="help.tokens.share">Share the view URL along with the token password with your audience. Without the token, the content is inaccessible.</span></li>
+                  </ul>
+                </div>
+              </div>
+            </details>
+
             <section>
               <label id="dropzone" class="dropzone" for="file-input">
                 <span class="icon" aria-hidden="true">
@@ -135,6 +189,6 @@
       </div>
     </div>
 
-    <script type="module" src="static/js/upload.js?v=5"></script>
+    <script type="module" src="static/js/upload.js?v=6"></script>
   </body>
 </html>
