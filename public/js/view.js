@@ -36,6 +36,13 @@ async function init() {
   const hash = match[1];
   const iframe = $('#preview');
   iframe.setAttribute('src', `raw/${hash}/`);
+  iframe.addEventListener('load', () => { try { iframe.contentWindow.focus(); } catch(e) {} });
+
+  window.addEventListener('message', (e) => {
+    if (e.data && e.data.type === 'presentation-mode') {
+      document.body.classList.toggle('presentation-mode', !!e.data.enabled);
+    }
+  });
 
   const fullUrl = window.location.href;
   const urlPill = $('#url-pill');
