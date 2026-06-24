@@ -21,6 +21,23 @@ export default async function rawRoutes(app) {
     return true;
   }
 
+  function checkAssetAccess(hash, request, reply) {
+    if (!db.hasAccessTokens(hash)) return true;
+    const token = request.query?.token || request.headers['x-access-token'];
+    if (!token) {
+      reply.code(401).header('Content-Type', 'application/json; charset=utf-8');
+      reply.send({ error: 'token_required' });
+      return false;
+    }
+    const result = db.verifyAccessToken(hash, token);
+    if (!result.valid) {
+      reply.code(403).header('Content-Type', 'application/json; charset=utf-8');
+      reply.send({ error: result.exhausted ? 'token_exhausted' : 'invalid_token' });
+      return false;
+    }
+    return true;
+  }
+
   async function serveHtmlFile(hash, reply) {
     let body;
     try {
@@ -77,11 +94,11 @@ export default async function rawRoutes(app) {
     if (!row) {
       return reply.code(404).send({ error: 'not_found' });
     }
-    if (!checkAccess(hash, request, reply)) return;
     if (row.kind === 'bundle') {
       const qs = request.query?.token ? `?token=${encodeURIComponent(request.query.token)}` : '';
       return reply.redirect(`${prefix}/raw/${hash}/${qs}`);
     }
+    if (!checkAccess(hash, request, reply)) return;
     return serveHtmlFile(hash, reply);
   });
 
@@ -96,17 +113,17 @@ export default async function rawRoutes(app) {
     if (!row) {
       return reply.code(404).send({ error: 'not_found' });
     }
-    if (!checkAccess(hash, request, reply)) return;
-
-    if (row.kind !== 'bundle') {
-      if (rest === '' || rest === '/') {
+    if (rest === '' || rest === '/') {
+      if (!checkAccess(hash, request, reply)) return;
+      if (row.kind !== 'bundle') {
         return serveHtmlFile(hash, reply);
       }
-      return reply.code(404).send({ error: 'not_found' });
+      return serveBundleEntry(hash, reply);
     }
 
-    if (rest === '' || rest === '/') {
-      return serveBundleEntry(hash, reply);
+    if (!checkAssetAccess(hash, request, reply)) return;
+    if (row.kind !== 'bundle') {
+      return reply.code(404).send({ error: 'not_found' });
     }
 
     reply

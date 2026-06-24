@@ -320,6 +320,17 @@ export class Db {
     })();
   }
 
+  verifyAccessToken(uploadHash, token) {
+    if (!uploadHash || !token) return { valid: false, remaining: 0 };
+    const row = this._getAccessTokenByToken.get(uploadHash, token);
+    if (!row) return { valid: false, remaining: 0 };
+    if (row.maxUses !== -1 && row.usedCount >= row.maxUses) {
+      return { valid: false, remaining: 0, exhausted: true };
+    }
+    const remaining = row.maxUses === -1 ? -1 : row.maxUses - row.usedCount;
+    return { valid: true, remaining };
+  }
+
   close() {
     this.db.close();
   }
