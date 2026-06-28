@@ -55,6 +55,19 @@ CREATE TABLE IF NOT EXISTS access_tokens (
 
 CREATE INDEX IF NOT EXISTS idx_access_tokens_hash
   ON access_tokens(upload_hash);
+
+CREATE TABLE IF NOT EXISTS visit_stats (
+  upload_hash  TEXT NOT NULL,
+  ip           TEXT NOT NULL,
+  visit_count  INTEGER NOT NULL DEFAULT 0,
+  first_visit  INTEGER NOT NULL,
+  last_visit   INTEGER NOT NULL,
+  PRIMARY KEY (upload_hash, ip),
+  FOREIGN KEY (upload_hash) REFERENCES uploads(hash) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_visit_stats_hash
+  ON visit_stats(upload_hash);
 `;
 
 export class Db {
@@ -162,6 +175,28 @@ export class Db {
     `);
     this._hasAccessTokens = this.db.prepare(`
       SELECT 1 FROM access_tokens WHERE upload_hash = ? LIMIT 1
+    `);
+
+    this._upsertVisit = this.db.prepare(`
+      INSERT INTO visit_stats (upload_hash, ip, visit_count, first_visit, last_visit)
+      VALUES (?, ?, 1, ?, ?)
+      ON CONFLICT(upload_hash, ip) DO UPDATE SET
+        visit_count = visit_count + 1,
+        last_visit = excluded.last_visit
+    `);
+    this._getVisitSummary = this.db.prepare(`
+      SELECT
+        COUNT(*)         AS uniqueIps,
+        COALESCE(SUM(visit_count), 0) AS totalVisits
+      FROM visit_stats WHERE upload_hash = ?
+    `);
+    this._getVisitStatsByIp = this.db.prepare(`
+      SELECT ip,
+             visit_count AS visitCount,
+             first_visit AS firstVisit,
+             last_visit  AS lastVisit
+      FROM visit_stats WHERE upload_hash = ?
+      ORDER BY visit_count DESC, last_visit DESC
     `);
   }
 
@@ -329,6 +364,26 @@ export class Db {
     }
     const remaining = row.maxUses === -1 ? -1 : row.maxUses - row.usedCount;
     return { valid: true, remaining };
+  }
+
+  recordVisit(uploadHash, ip) {
+    if (!uploadHash) return;
+    const now = Date.now();
+    try {
+      this._upsertVisit.run(uploadHash, ip || 'unknown', now, now);
+    } catch {
+      // FK violation: upload doesn't exist — silently ignore
+    }
+  }
+
+  getVisitStats(uploadHash) {
+    const summary = this._getVisitSummary.get(uploadHash) ?? { uniqueIps: 0, totalVisits: 0 };
+    const byIp = this._getVisitStatsByIp.all(uploadHash);
+    return {
+      totalVisits: summary.totalVisits,
+      uniqueIps: summary.uniqueIps,
+      byIp,
+    };
   }
 
   close() {

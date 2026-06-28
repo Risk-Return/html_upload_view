@@ -1,4 +1,4 @@
-import { generateHash } from '../hash.js';
+import { generateHash, isValidHash } from '../hash.js';
 import { clientIp } from '../ip.js';
 import { BundleError } from '../bundle.js';
 import { sanitizeTokens } from './tokens.js';
@@ -34,6 +34,22 @@ export default async function uploadRoutes(app) {
       createdAt: r.createdAt,
       url: buildPreviewUrl(config.publicHost, config.basePath, r.hash),
     })));
+  });
+
+  app.get('/api/uploads/:hash/stats', async (request, reply) => {
+    const { hash } = request.params;
+    if (!isValidHash(hash)) {
+      return reply.code(404).send({ error: 'not_found' });
+    }
+    const row = db.getUpload(hash);
+    if (!row) {
+      return reply.code(404).send({ error: 'not_found' });
+    }
+    if (!request.user || row.uploadedBy !== request.user.email) {
+      return reply.code(403).send({ error: 'forbidden' });
+    }
+    const stats = db.getVisitStats(hash);
+    return reply.send(stats);
   });
 
   app.post('/api/upload', async (request, reply) => {

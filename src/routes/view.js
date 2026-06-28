@@ -3,6 +3,7 @@ import path from 'node:path';
 import { isValidHash } from '../hash.js';
 import { projectPaths } from '../config.js';
 import { renderTemplate } from '../template.js';
+import { clientIp } from '../ip.js';
 
 const VIEW_PAGE = path.join(projectPaths.publicDir, 'view.html');
 
@@ -15,6 +16,7 @@ function readMaybeText(p) {
 }
 
 export default async function viewRoutes(app) {
+  const { db } = app;
   const viewTpl = readMaybeText(VIEW_PAGE);
   const rendered = viewTpl == null ? null : renderTemplate(viewTpl, app.config);
 
@@ -23,10 +25,11 @@ export default async function viewRoutes(app) {
     if (!isValidHash(hash)) {
       return reply.code(404).send({ error: 'not_found' });
     }
-    const row = app.db.getUpload(hash);
+    const row = db.getUpload(hash);
     if (!row) {
       return reply.code(404).send({ error: 'not_found' });
     }
+    db.recordVisit(hash, clientIp(request));
     if (!rendered) {
       return reply.code(500).send({ error: 'page_missing' });
     }

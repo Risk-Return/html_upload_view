@@ -189,6 +189,42 @@
       </div>
     </div>
 
-    <script type="module" src="static/js/upload.js?v=6"></script>
+    <div id="stats-modal" class="modal-overlay" hidden>
+      <div class="modal" style="max-width:560px">
+        <div class="modal-header">
+          <h3 data-i18n="stats.title">Visit Statistics</h3>
+          <button id="stats-modal-close" class="icon-btn" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+        <div class="modal-body">
+          <p id="stats-modal-file" style="font-size:13px;color:var(--text-soft);margin:0 0 12px"></p>
+          <div id="stats-summary" style="display:flex;gap:16px;margin-bottom:16px">
+            <div style="flex:1;text-align:center;padding:12px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg-card)">
+              <div id="stats-total" style="font-size:28px;font-weight:700;color:var(--accent)">0</div>
+              <div data-i18n="stats.totalVisits" style="font-size:11px;color:var(--text-soft);margin-top:4px">Total Visits</div>
+            </div>
+            <div style="flex:1;text-align:center;padding:12px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg-card)">
+              <div id="stats-unique" style="font-size:28px;font-weight:700;color:var(--success)">0</div>
+              <div data-i18n="stats.uniqueIps" style="font-size:11px;color:var(--text-soft);margin-top:4px">Unique IPs</div>
+            </div>
+          </div>
+          <div id="stats-empty" style="font-size:13px;color:var(--text-soft);text-align:center;padding:16px 0" data-i18n="stats.empty">No visits recorded yet.</div>
+          <table id="stats-table" hidden style="width:100%;border-collapse:collapse;font-size:13px">
+            <thead>
+              <tr style="border-bottom:1px solid var(--border)">
+                <th data-i18n="stats.ip" style="text-align:left;padding:8px 4px;font-weight:600;color:var(--text-muted)">IP</th>
+                <th data-i18n="stats.visits" style="text-align:right;padding:8px 4px;font-weight:600;color:var(--text-muted)">Visits</th>
+                <th data-i18n="stats.firstVisit" style="text-align:right;padding:8px 4px;font-weight:600;color:var(--text-muted)">First Visit</th>
+                <th data-i18n="stats.lastVisit" style="text-align:right;padding:8px 4px;font-weight:600;color:var(--text-muted)">Last Visit</th>
+              </tr>
+            </thead>
+            <tbody id="stats-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <script type="module" src="static/js/upload.js?v=7"></script>
   </body>
 </html>

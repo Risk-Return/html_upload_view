@@ -92,3 +92,68 @@ test('transaction rolls back on throw', () => {
     db.close();
   }
 });
+
+test('recordVisit + getVisitStats tracks total, unique IPs, and per-IP counts', () => {
+  const db = newDb();
+  try {
+    db.insertUpload({
+      hash: 'visitTestHash1',
+      originalName: 'deck.html',
+      sizeBytes: 10,
+      ip: '1.1.1.1',
+      createdAt: 1700000000000,
+    });
+
+    db.recordVisit('visitTestHash1', '10.0.0.1');
+    db.recordVisit('visitTestHash1', '10.0.0.1');
+    db.recordVisit('visitTestHash1', '10.0.0.2');
+    db.recordVisit('visitTestHash1', '10.0.0.1');
+
+    const stats = db.getVisitStats('visitTestHash1');
+    assert.equal(stats.totalVisits, 4);
+    assert.equal(stats.uniqueIps, 2);
+    assert.equal(stats.byIp.length, 2);
+
+    const ip1 = stats.byIp.find((r) => r.ip === '10.0.0.1');
+    assert.equal(ip1.visitCount, 3);
+    assert.equal(ip1.firstVisit > 0, true);
+    assert.equal(ip1.lastVisit >= ip1.firstVisit, true);
+
+    const ip2 = stats.byIp.find((r) => r.ip === '10.0.0.2');
+    assert.equal(ip2.visitCount, 1);
+
+    assert.equal(stats.byIp[0].visitCount >= stats.byIp[1].visitCount, true);
+  } finally {
+    db.close();
+  }
+});
+
+test('getVisitStats returns zeros for upload with no visits', () => {
+  const db = newDb();
+  try {
+    db.insertUpload({
+      hash: 'noVisitsHash1',
+      originalName: 'empty.html',
+      sizeBytes: 5,
+      ip: '1.1.1.1',
+      createdAt: 1700000000000,
+    });
+    const stats = db.getVisitStats('noVisitsHash1');
+    assert.equal(stats.totalVisits, 0);
+    assert.equal(stats.uniqueIps, 0);
+    assert.deepEqual(stats.byIp, []);
+  } finally {
+    db.close();
+  }
+});
+
+test('recordVisit is a no-op for missing upload', () => {
+  const db = newDb();
+  try {
+    db.recordVisit('nonexistent12', '1.2.3.4');
+    const stats = db.getVisitStats('nonexistent12');
+    assert.equal(stats.totalVisits, 0);
+  } finally {
+    db.close();
+  }
+});

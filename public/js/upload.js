@@ -280,6 +280,70 @@ async function modalAddToken() {
   }
 }
 
+let statsModalState = { hash: null, fileName: null };
+
+async function openStatsModal(hash, fileName) {
+  statsModalState = { hash, fileName };
+  els.statsModal.hidden = false;
+  els.statsModalFile.textContent = fileName;
+  await loadStats();
+}
+
+function formatVisitTime(ts) {
+  const d = new Date(ts);
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+async function loadStats() {
+  const tbody = els.statsTbody;
+  const empty = els.statsEmpty;
+  const table = els.statsTable;
+  tbody.innerHTML = '';
+  try {
+    const res = await fetch(`api/uploads/${statsModalState.hash}/stats`);
+    if (!res.ok) {
+      empty.hidden = false;
+      table.hidden = true;
+      return;
+    }
+    const data = await res.json();
+    els.statsTotal.textContent = data.totalVisits;
+    els.statsUnique.textContent = data.uniqueIps;
+    if (!data.byIp || data.byIp.length === 0) {
+      empty.hidden = false;
+      table.hidden = true;
+      return;
+    }
+    empty.hidden = true;
+    table.hidden = false;
+    data.byIp.forEach((row) => {
+      const tr = document.createElement('tr');
+      tr.style.borderBottom = '1px solid var(--border)';
+      const tdIp = document.createElement('td');
+      tdIp.style.cssText = 'padding:8px 4px;font-family:var(--font-mono);font-size:12px;color:var(--text)';
+      tdIp.textContent = row.ip;
+      const tdVisits = document.createElement('td');
+      tdVisits.style.cssText = 'padding:8px 4px;text-align:right;font-weight:600;color:var(--accent)';
+      tdVisits.textContent = row.visitCount;
+      const tdFirst = document.createElement('td');
+      tdFirst.style.cssText = 'padding:8px 4px;text-align:right;font-size:12px;color:var(--text-soft)';
+      tdFirst.textContent = formatVisitTime(row.firstVisit);
+      const tdLast = document.createElement('td');
+      tdLast.style.cssText = 'padding:8px 4px;text-align:right;font-size:12px;color:var(--text-soft)';
+      tdLast.textContent = formatVisitTime(row.lastVisit);
+      tr.appendChild(tdIp);
+      tr.appendChild(tdVisits);
+      tr.appendChild(tdFirst);
+      tr.appendChild(tdLast);
+      tbody.appendChild(tr);
+    });
+  } catch {
+    empty.hidden = false;
+    table.hidden = true;
+  }
+}
+
 function timeAgo(ts) {
   const diff = Date.now() - ts;
   const mins = Math.floor(diff / 60000);
@@ -328,10 +392,16 @@ function renderHistory(items) {
         <span class="hi-time"></span>
       </div>
       <div class="hi-url"></div>
-      <button type="button" class="hi-token-btn" title="${i18n.t('tokens.manageTokens')}" style="margin-top:6px;font-size:11px;padding:4px 10px;border:1px solid var(--border);border-radius:6px;background:transparent;color:var(--text-soft);cursor:pointer;display:inline-flex;align-items:center;gap:4px">
-        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px;stroke:currentColor"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-        <span data-i18n="tokens.manageTokens">Tokens</span>
-      </button>`;
+      <div style="display:flex;gap:6px;margin-top:6px">
+        <button type="button" class="hi-token-btn" title="${i18n.t('tokens.manageTokens')}" style="font-size:11px;padding:4px 10px;border:1px solid var(--border);border-radius:6px;background:transparent;color:var(--text-soft);cursor:pointer;display:inline-flex;align-items:center;gap:4px">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px;stroke:currentColor"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          <span data-i18n="tokens.manageTokens">Tokens</span>
+        </button>
+        <button type="button" class="hi-stats-btn" title="${i18n.t('stats.manageStats')}" style="font-size:11px;padding:4px 10px;border:1px solid var(--border);border-radius:6px;background:transparent;color:var(--text-soft);cursor:pointer;display:inline-flex;align-items:center;gap:4px">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px;stroke:currentColor"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          <span data-i18n="stats.manageStats">Stats</span>
+        </button>
+      </div>`;
     li.querySelector('.hi-name').textContent = item.originalName;
     li.querySelector('.hi-size').textContent = formatBytes(item.sizeBytes);
     li.querySelector('.hi-time').textContent = timeAgo(item.createdAt);
@@ -344,6 +414,11 @@ function renderHistory(items) {
       e.stopPropagation();
       const hashMatch = item.url.match(/\/view\/([0-9A-Za-z]{12})/);
       if (hashMatch) openTokenModal(hashMatch[1], item.originalName);
+    });
+    li.querySelector('.hi-stats-btn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      const hashMatch = item.url.match(/\/view\/([0-9A-Za-z]{12})/);
+      if (hashMatch) openStatsModal(hashMatch[1], item.originalName);
     });
     els.historyList.appendChild(li);
   });
@@ -400,6 +475,14 @@ async function init() {
   els.tokenModalInput = $('#token-modal-input');
   els.tokenModalMax = $('#token-modal-max');
   els.tokenModalAdd = $('#token-modal-add');
+  els.statsModal = $('#stats-modal');
+  els.statsModalClose = $('#stats-modal-close');
+  els.statsModalFile = $('#stats-modal-file');
+  els.statsTotal = $('#stats-total');
+  els.statsUnique = $('#stats-unique');
+  els.statsEmpty = $('#stats-empty');
+  els.statsTable = $('#stats-table');
+  els.statsTbody = $('#stats-tbody');
 
   await i18n.init();
 
@@ -467,6 +550,14 @@ async function init() {
   if (els.tokenModalInput) {
     els.tokenModalInput.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') modalAddToken();
+    });
+  }
+  if (els.statsModalClose) {
+    els.statsModalClose.addEventListener('click', () => { els.statsModal.hidden = true; });
+  }
+  if (els.statsModal) {
+    els.statsModal.addEventListener('click', (e) => {
+      if (e.target === els.statsModal) els.statsModal.hidden = true;
     });
   }
 

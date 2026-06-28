@@ -128,5 +128,16 @@
     "gatePrompt": "此内容已受保护。请输入访问令牌以查看。",
     "gateSubmit": "解锁",
     "gateError": "令牌无效或已用完。"
+  },
+  "stats": {
+    "title": "访问统计",
+    "manageStats": "统计",
+    "totalVisits": "总访问量",
+    "uniqueIps": "独立 IP 数",
+    "empty": "暂无访问记录。",
+    "ip": "IP 地址",
+    "visits": "访问次数",
+    "firstVisit": "首次访问",
+    "lastVisit": "最近访问"
   }
 }

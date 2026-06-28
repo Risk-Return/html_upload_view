@@ -128,5 +128,16 @@
     "gatePrompt": "This content is protected. Enter the access token to view.",
     "gateSubmit": "Unlock",
     "gateError": "Invalid or exhausted token."
+  },
+  "stats": {
+    "title": "Visit Statistics",
+    "manageStats": "Stats",
+    "totalVisits": "Total Visits",
+    "uniqueIps": "Unique IPs",
+    "empty": "No visits recorded yet.",
+    "ip": "IP",
+    "visits": "Visits",
+    "firstVisit": "First Visit",
+    "lastVisit": "Last Visit"
   }
 }
