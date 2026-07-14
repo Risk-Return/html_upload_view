@@ -88,6 +88,67 @@ export default async function authRoutes(app) {
     return reply.send({ ok: true, email });
   });
 
+  app.post('/api/auth/send-reset-code', async (request, reply) => {
+    const { email } = request.body || {};
+    if (!email || !EMAIL_RE.test(email)) {
+      return reply.code(400).send({ error: 'invalid_email' });
+    }
+
+    const user = app.db.getUser(email);
+    if (!user || !user.verified) {
+      return reply.code(404).send({ error: 'user_not_found' });
+    }
+
+    const code = String(Math.floor(100000 + Math.random() * 900000));
+    const expiresAt = Date.now() + config.verificationCodeExpirySeconds * 1000;
+
+    app.db.createVerificationCode(email, code, expiresAt);
+
+    try {
+      await sendVerificationEmail({
+        to: email,
+        code,
+        log: request.log,
+        config,
+      });
+    } catch (err) {
+      request.log.error({ err }, 'Failed to send verification email');
+    }
+
+    return reply.send({ ok: true });
+  });
+
+  app.post('/api/auth/reset-password', async (request, reply) => {
+    const { email, code, password } = request.body || {};
+    if (!email || !EMAIL_RE.test(email)) {
+      return reply.code(400).send({ error: 'invalid_email' });
+    }
+    if (!code || !/^\d{6}$/.test(code)) {
+      return reply.code(400).send({ error: 'invalid_code' });
+    }
+    if (!password || password.length < 6) {
+      return reply.code(400).send({ error: 'password_too_short' });
+    }
+
+    const user = app.db.getUser(email);
+    if (!user || !user.verified) {
+      return reply.code(404).send({ error: 'user_not_found' });
+    }
+
+    const validCode = app.db.validateCode(email, code);
+    if (!validCode) {
+      return reply.code(400).send({ error: 'invalid_or_expired_code' });
+    }
+
+    app.db.transaction(() => {
+      const passwordHash = hashPassword(password);
+      app.db.updatePassword(email, passwordHash);
+      app.db.markCodeUsed(validCode.id);
+    })();
+
+    return reply.send({ ok: true });
+  });
+
   app.post('/api/auth/login', async (request, reply) => {
     const { email, password } = request.body || {};
     if (!email || !password) {

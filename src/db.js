@@ -262,6 +262,10 @@ export class Db {
     this._updatePassword.run({ email, passwordHash });
   }
 
+  updatePassword(email, passwordHash) {
+    this.db.prepare('UPDATE users SET password_hash = ? WHERE email = ?').run(passwordHash, email);
+  }
+
   createVerificationCode(email, code, expiresAt) {
     this._insertVerificationCode.run({ email, code, expiresAt });
   }
